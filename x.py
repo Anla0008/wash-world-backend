@@ -86,7 +86,7 @@ USER_HASHED_PASSWORD_MIN = 8
 USER_HASHED_PASSWORD_MAX = 255
 REGEX_USER_HASHED_PASSWORD = f"^.{{{USER_HASHED_PASSWORD_MIN},{USER_HASHED_PASSWORD_MAX}}}$" # Regex med en f-string.
 
-def validate_user_password():
+def validate_user_hashed_password():
     user_hashed_password = request.form.get("user_hashed_password", "").strip()
 
     if not re.match(REGEX_USER_HASHED_PASSWORD, user_hashed_password):

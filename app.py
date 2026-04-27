@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 import uuid
 import time # EPOCH, timestamp
 from werkzeug.security import generate_password_hash
@@ -61,8 +61,13 @@ def login():
 def sign_up():
     try:
         # TODO: Validate user data
+        verification_key = x.validate_uuid4()
         user_first_name = x.validate_user_first_name()
+        user_last_name = x.validate_user_last_name()
         user_email = x.validate_user_email()
+        user_created_at = int(time.time())
+        user_verified_at = 0
+        user_forgot_password = 0
         password = x.validate_user_hashed_password()
 
         # Hasher vores password
@@ -88,7 +93,7 @@ def sign_up():
         db.commit()
 
         # TODO: Send email with verification key
-        # html = render_template("email_welcome.html", verification_key=verification_key)     !!!!! HOW TO !!!!!!
+        html = jsonify(verification_key=verification_key)
 
         # Pointing to global email function
         x.send_email("Activate your account", html)
@@ -168,7 +173,7 @@ def forgot_password():
         if not row:
             return "Email not found", 400
 
-        html = render_template("email_forgot_password.html", user_reset_password_key=row["key"])
+        html = jsonify(user_reset_password_key=row["key"])
 
         # Pointing to global email function
         x.send_email("Reset your password", html)
@@ -212,7 +217,7 @@ def show_reset_password(key):
         if not row:
             return "Ups...", 400
 
-        # return render_template("page_reset_password.html", key=key)  !!!! FIX WHAT !!!!!
+        return jsonify(key=key)
     
     except Exception as ex:
         ic(ex)
