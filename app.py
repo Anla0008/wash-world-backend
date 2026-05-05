@@ -278,5 +278,71 @@ def reset_password():
         if "db" in locals(): db.close()
 
 
+############################################################
+@app.get("/api/users/<user_pk>")
+def get_user(user_pk):
+    db, cursor = x.db() 
+
+    cursor.execute("SELECT * FROM users WHERE user_pk = %s", (user_pk,))
+    user = cursor.fetchone()
+
+    cursor.close()
+    db.close()
+
+    return {"user": user}
 
 
+############################################################
+@app.delete("/users/<user_pk>")
+def delete_user(user_pk):
+    try:
+        db, cursor = x.db()
+
+        # Slet relaterede data først
+        cursor.execute("DELETE FROM feedback WHERE user_fk = %s", (user_pk,))
+        cursor.execute("DELETE FROM favorites WHERE user_fk = %s", (user_pk,))
+        cursor.execute("DELETE FROM license_plate WHERE user_fk = %s", (user_pk,))
+
+        # Slet så brugeren
+        cursor.execute("DELETE FROM users WHERE user_pk = %s", (user_pk,))
+        db.commit()
+
+        if cursor.rowcount == 0:
+            return {"message": "User not found"}, 404
+
+        return {"message": "User deleted"}, 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"message": "System under maintenance"}, 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+############################################################
+@app.get("/locations")
+def get_locations():
+    try:
+        db, cursor = x.db()
+
+        q = "SELECT * FROM car_wash_locations"
+        cursor.execute(q)
+        locations = cursor.fetchall()
+
+        if not locations:
+            return {"message": "No locations found"}, 404
+
+        return jsonify(locations=locations)
+
+    except Exception as ex:
+        ic(ex)
+        return {"message": "System under maintenance"}, 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+############################################################

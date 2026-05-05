@@ -18,7 +18,7 @@ def db():
             host = "mariadb",
             user = "root",  
             password = "password",
-            database = "2026_1_washworld" # Navnet på den database vi har i vores docker (kan skiftes til docker-compose.ylm)
+            database = "eksamen_washworld" # Navnet på den database vi har i vores docker (kan skiftes til docker-compose.ylm)
         )
         cursor = db.cursor(dictionary=True)
         return db, cursor
@@ -74,7 +74,7 @@ REGEX_USER_EMAIL = r"^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+
 
 def validate_user_email():
     user_email = request.form.get("user_email", "").strip()
-    if not re.match(REGEX_EMAIL, user_email):
+    if not re.match(REGEX_USER_EMAIL, user_email):
         raise Exception("company_exception user_email")
 
     # Bruges nede i "send email" 
