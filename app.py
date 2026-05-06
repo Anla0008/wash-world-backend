@@ -21,42 +21,6 @@ jwt = JWTManager(app)
 
 
 ############################################################
-@app.post("/login")
-def login():
-
-    try:
-        # TODO: Validate user data
-        user_email = x.validate_user_email()
-        user_hashed_password = x.validate_user_hashed_password()
-
-        # TODO: Connect to the database
-        db, cursor = x.db()
-        q = "SELECT user_first_name FROM users WHERE user_email"
-        cursor.execute(q, (user_email,))
-        user = cursor.fetchone()
-
-
-        access_token = create_access_token(identity=str(user)),
-        return jsonify(access_token=access_token)
-        
-    
-    except Exception as ex:
-        ic(ex)
-        if "company_exception user_email" in str(ex):
-            return "Invalid user_email", 400
-        
-        if "company_exception user_password" in str(ex):
-            return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
-
-        # Worst case
-        return f"""<browser>System under maintenance</browser>""", 500
-        
-    finally: 
-        if "cursor" in locals(): cursor.close() # Locals refers to anything inside the try or except
-        if "db" in locals(): db.close() # db refers to anything inside the database
-
-
-############################################################
 @app.post("/sign-up")
 def sign_up():
     try:
@@ -69,7 +33,7 @@ def sign_up():
         user_verified_at = 0
         user_forgot_password = 0
         password = x.validate_user_hashed_password()
-
+        
         # Hasher vores password
         user_hashed_password = generate_password_hash(password)
 
@@ -78,19 +42,28 @@ def sign_up():
         user_pk = uuid.uuid4().hex
         user_verification_key = uuid.uuid4().hex
         ic(user_verification_key)
-
-        # Two times uuid to make it extra secure
+       
+       # Two times uuid to make it extra secure
         user_reset_password_key = uuid.uuid4().hex + uuid.uuid4().hex
         ic(user_reset_password_key)
 
+        # Valider nummerplade fra step 2
+        plate_number = x.validate_license_plate()
+        license_plate_pk = uuid.uuid4().hex
 
         # TODO: Connect to the database
         db, cursor = x.db()
 
-        # TODO: Insert user data to the db
+        # Insert bruger
+         # TODO: Insert user data to the db
         q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_forgot_password, user_reset_password_key))
-        db.commit()
+
+        # Insert nummerplade med reference til brugeren
+        q2 = "INSERT INTO license_plate VALUES (%s, %s, %s)"
+        cursor.execute(q2, (license_plate_pk, user_pk, plate_number))
+
+        db.commit()  # Begge inserts committes samlet
 
         # TODO: Send email with verification key
         html = jsonify(verification_key=verification_key)
@@ -158,6 +131,42 @@ def verify_account(key):
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
+
+############################################################
+@app.post("/login")
+def login():
+
+    try:
+        # TODO: Validate user data
+        user_email = x.validate_user_email()
+        user_hashed_password = x.validate_user_hashed_password()
+
+        # TODO: Connect to the database
+        db, cursor = x.db()
+        q = "SELECT user_first_name FROM users WHERE user_email"
+        cursor.execute(q, (user_email,))
+        user = cursor.fetchone()
+
+
+        access_token = create_access_token(identity=str(user)),
+        return jsonify(access_token=access_token)
+        
+    
+    except Exception as ex:
+        ic(ex)
+        if "company_exception user_email" in str(ex):
+            return "Invalid user_email", 400
+        
+        if "company_exception user_password" in str(ex):
+            return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
+
+        # Worst case
+        return f"""<browser>System under maintenance</browser>""", 500
+        
+    finally: 
+        if "cursor" in locals(): cursor.close() # Locals refers to anything inside the try or except
+        if "db" in locals(): db.close() # db refers to anything inside the database
 
 
 ############################################################
@@ -279,7 +288,8 @@ def reset_password():
 
 
 ############################################################
-@app.get("/api/users/<user_pk>")
+# HVAD VIL VI MED DENNE ?????????????????????
+@app.get("/users/<user_pk>")
 def get_user(user_pk):
     db, cursor = x.db() 
 
@@ -308,13 +318,13 @@ def delete_user(user_pk):
         db.commit()
 
         if cursor.rowcount == 0:
-            return {"message": "User not found"}, 404
+            return {"error": "User not found"}, 404
 
-        return {"message": "User deleted"}, 200
+        return {"error": "User deleted"}, 200
 
     except Exception as ex:
         ic(ex)
-        return {"message": "System under maintenance"}, 500
+        return {"error": "System under maintenance"}, 500
 
     finally:
         if "cursor" in locals(): cursor.close()
@@ -332,13 +342,13 @@ def get_locations():
         locations = cursor.fetchall()
 
         if not locations:
-            return {"message": "No locations found"}, 404
+            return {"error": "No locations found"}, 404
 
         return jsonify(locations=locations)
 
     except Exception as ex:
         ic(ex)
-        return {"message": "System under maintenance"}, 500
+        return {"error": "System under maintenance"}, 500
 
     finally:
         if "cursor" in locals(): cursor.close()
@@ -346,3 +356,38 @@ def get_locations():
 
 
 ############################################################
+@app.patch("/profile-information/<user_pk>")
+def profile_information(user_pk):
+    try:
+        # Validerer user information
+        user_first_name = x.validate_user_first_name()
+        user_last_name = x.validate_user_last_name()
+        user_email = x.validate_user_email()
+
+        # Connect til database
+        db, cursor = x.db()
+
+        q = """
+            UPDATE users
+            SET user_first_name = %s,
+                user_last_name = %s,
+                user_email = %s
+            WHERE user_pk = %s
+        """
+
+        cursor.execute(q, (user_first_name, user_last_name, user_email, user_pk))
+        db.commit()
+
+        # cursor.rowcount er et tal der fortæller hvor mange rækker der blev påvirket 
+        if cursor.rowcount == 0:
+            return jsonify(error="User not found"), 404
+            
+        return jsonify(error="Profile updated"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"error": "System under maintenance"}, 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()

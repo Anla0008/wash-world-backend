@@ -26,19 +26,6 @@ def db():
         print(e, flush=True)
         raise Exception("Database under maintenance", 500)
 
-################################ NO CHACHE IN COOKIES #################################
-def no_cache(view):
-    @wraps(view)
-    def no_cache_view(*args, **kwargs):
-
-        response = make_response(view(*args, **kwargs))
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-
-        return response
-    return no_cache_view
-
 
 #######################################################################################
 #                    HERUNDER BEGYNDER VALIDATION FOR USERS TABEL                     #
@@ -102,6 +89,18 @@ def validate_uuid4(uuid4):
     if not re.match(REGEX_UUID4, uuid):
         raise Exception("company_exception uuid4 invalid")
     return uuid
+
+
+#----------- VALIDATION FOR LICENSE_PLATE -----------#
+# Dansk format: præcis 2 bogstaver + præcis 5 cifre, fx "AB12345"
+REGEX_LICENSE_PLATE = r"^[A-Z]{2}\d{5}$"
+
+def validate_license_plate():
+    plate_number = request.form.get("plate_number", "").strip().upper()
+
+    if not re.match(REGEX_LICENSE_PLATE, plate_number):
+        raise Exception("company_exception license_plate")
+    return plate_number
 
 
 #------------------- SEND EMAIL ---------------------#
