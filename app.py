@@ -9,11 +9,11 @@ import x
 from flask_cors import CORS
 
 from icecream import ic
-ic.configureOutput(prefix=f"_____ | ", includeContext=True)
+ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
 
-app = Flask(__name__)
+app = Flask(_name_)
 CORS(app)  # allows everything
 
 app.config["JWT_SECRET_KEY"] = "super-secret-key" # From chatGPT (jwt)
@@ -26,6 +26,7 @@ def sign_up():
     try:
         # TODO: Validate user data
         verification_key = x.validate_uuid4()
+        # verification_key = uuid.uuid4().hex
         user_first_name = x.validate_user_first_name()
         user_last_name = x.validate_user_last_name()
         user_email = x.validate_user_email()
@@ -134,21 +135,26 @@ def verify_account(key):
 
 
 ############################################################
-@app.post("/login")
+@app.post("/")
 def login():
 
     try:
         # TODO: Validate user data
         user_email = x.validate_user_email()
-        user_hashed_password = x.validate_user_hashed_password()
+        password = x.validate_user_hashed_password()
 
         # TODO: Connect to the database
         db, cursor = x.db()
-        q = "SELECT user_first_name FROM users WHERE user_email"
+        q = "SELECT user_email, user_hashed_password FROM users WHERE user_email = %s AND user_hashed_password = %s"
         cursor.execute(q, (user_email,))
         user = cursor.fetchone()
 
+        # Tjek at brugeren findes og at password matcher
+        if not user or not check_password_hash(user["user_hashed_password"], password):
+            return "Invalid email or password", 401
 
+
+        # Create JWT token
         access_token = create_access_token(identity=str(user)),
         return jsonify(access_token=access_token)
         

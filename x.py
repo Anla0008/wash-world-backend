@@ -4,7 +4,7 @@ import re # Regular expression module for validating input also called "regex"
 from functools import wraps
 
 from icecream import ic
-ic.configureOutput(prefix=f"_____ | ", includeContext=True)
+ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
 # Library to send email
 import smtplib
@@ -37,7 +37,7 @@ USER_FIRST_NAME_MAX = 20
 REGEX_USER_FIRST_NAME = f"^.{{{USER_FIRST_NAME_MIN},{USER_FIRST_NAME_MAX}}}$" # Regex med en f-string.
 
 def validate_user_first_name():
-    user_first_name = request.form.get("user_first_name", "").strip()
+    user_first_name = request.json.get("user_first_name", "").strip()
 
     if not re.match(REGEX_USER_FIRST_NAME, user_first_name):
         raise Exception ("company_exception user_first_name")
@@ -49,7 +49,7 @@ USER_LAST_NAME_MAX = 20
 REGEX_USER_LAST_NAME = f"^.{{{USER_LAST_NAME_MIN},{USER_LAST_NAME_MAX}}}$" # Regex med en f-string.
 
 def validate_user_last_name():
-    user_last_name = request.form.get("user_last_name", "").strip()
+    user_last_name = request.json.get("user_last_name", "").strip()
 
     if not re.match(REGEX_USER_LAST_NAME, user_last_name):
         raise Exception ("company_exception user_last_name")
@@ -60,7 +60,7 @@ def validate_user_last_name():
 REGEX_USER_EMAIL = r"^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"
 
 def validate_user_email():
-    user_email = request.form.get("user_email", "").strip()
+    user_email = request.json.get("user_email", "").strip()
     if not re.match(REGEX_USER_EMAIL, user_email):
         raise Exception("company_exception user_email")
 
@@ -74,7 +74,7 @@ USER_HASHED_PASSWORD_MAX = 255
 REGEX_USER_HASHED_PASSWORD = f"^.{{{USER_HASHED_PASSWORD_MIN},{USER_HASHED_PASSWORD_MAX}}}$" # Regex med en f-string.
 
 def validate_user_hashed_password():
-    user_hashed_password = request.form.get("user_hashed_password", "").strip()
+    user_hashed_password = request.json.get("user_hashed_password", "").strip()
 
     if not re.match(REGEX_USER_HASHED_PASSWORD, user_hashed_password):
         raise Exception ("company_exception user_hashed_password")
@@ -96,7 +96,7 @@ def validate_uuid4(uuid4):
 REGEX_LICENSE_PLATE = r"^[A-Z]{2}\d{5}$"
 
 def validate_license_plate():
-    plate_number = request.form.get("plate_number", "").strip().upper()
+    plate_number = request.json.get("plate_number", "").strip().upper()
 
     if not re.match(REGEX_LICENSE_PLATE, plate_number):
         raise Exception("company_exception license_plate")
