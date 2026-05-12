@@ -13,7 +13,7 @@ ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
 
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app)  # allows everything
 
 app.config["JWT_SECRET_KEY"] = "super-secret-key" # From chatGPT (jwt)
@@ -338,6 +338,28 @@ def delete_user(user_pk):
 
 
 ############################################################
+# @app.get("/locations")
+# def get_locations():
+#     try:
+#         db, cursor = x.db()
+
+#         q = "SELECT * FROM car_wash_locations"
+#         cursor.execute(q)
+#         locations = cursor.fetchall()
+
+#         if not locations:
+#             return {"error": "No locations found"}, 404
+
+#         return jsonify(locations=locations)
+
+#     except Exception as ex:
+#         ic(ex)
+#         return {"error": "System under maintenance"}, 500
+
+#     finally:
+#         if "cursor" in locals(): cursor.close()
+#         if "db" in locals(): db.close()
+
 @app.get("/locations")
 def get_locations():
     try:
@@ -348,13 +370,13 @@ def get_locations():
         locations = cursor.fetchall()
 
         if not locations:
-            return {"error": "No locations found"}, 404
+            return jsonify(error="No locations found"), 404
 
         return jsonify(locations=locations)
 
     except Exception as ex:
         ic(ex)
-        return {"error": "System under maintenance"}, 500
+        return jsonify(error="System under maintenance"), 500
 
     finally:
         if "cursor" in locals(): cursor.close()
