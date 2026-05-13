@@ -338,6 +338,28 @@ def delete_user(user_pk):
 
 
 ############################################################
+# @app.get("/locations")
+# def get_locations():
+#     try:
+#         db, cursor = x.db()
+
+#         q = "SELECT * FROM car_wash_locations"
+#         cursor.execute(q)
+#         locations = cursor.fetchall()
+
+#         if not locations:
+#             return {"error": "No locations found"}, 404
+
+#         return jsonify(locations=locations)
+
+#     except Exception as ex:
+#         ic(ex)
+#         return {"error": "System under maintenance"}, 500
+
+#     finally:
+#         if "cursor" in locals(): cursor.close()
+#         if "db" in locals(): db.close()
+
 @app.get("/locations")
 def get_locations():
     try:
@@ -348,13 +370,13 @@ def get_locations():
         locations = cursor.fetchall()
 
         if not locations:
-            return {"error": "No locations found"}, 404
+            return jsonify(error="No locations found"), 404
 
         return jsonify(locations=locations)
 
     except Exception as ex:
         ic(ex)
-        return {"error": "System under maintenance"}, 500
+        return jsonify(error="System under maintenance"), 500
 
     finally:
         if "cursor" in locals(): cursor.close()

@@ -57,6 +57,8 @@ def validate_user_last_name():
 
 
 #-------------- VALIDATION FOR EMAIL ----------------#
+# The r prefix makes this a raw string, so backslashes are treated literally.
+# This is useful for regex patterns because regex also uses backslashes for special syntax.
 REGEX_USER_EMAIL = r"^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$"
 
 def validate_user_email():
