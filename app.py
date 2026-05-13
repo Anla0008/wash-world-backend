@@ -179,7 +179,7 @@ def login():
 @app.post("/forgot-password")
 def forgot_password():
     try:
-        email = x.validate_email(request.form.get("email", ""))
+        email = x.validate_user_email(request.form.get("email", ""))
         db, cursor = x.db()
         q = "SELECT user_reset_password_key AS 'key' FROM users WHERE user_email = %s"
         cursor.execute(q, (email,))
