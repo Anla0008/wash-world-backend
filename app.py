@@ -458,3 +458,27 @@ def feedback():
     finally:
         if "cursor" in locals():cursor.close()
         if "db" in locals():db.close()
+
+
+##############################################
+@app.get("/washhall")
+def get_locations():
+    try:
+        db, cursor = x.db()
+
+        q = "SELECT * FROM car_wash_hall_info"
+        cursor.execute(q)
+        car_wash_hall_info = cursor.fetchall()
+
+        if not car_wash_hall_info:
+            return jsonify(error="No washhalls found"), 404
+
+        return jsonify(locations=car_wash_hall_info)
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
