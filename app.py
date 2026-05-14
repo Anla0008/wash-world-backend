@@ -419,3 +419,42 @@ def profile_information(user_pk):
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
+
+############################################################
+@app.post("/feedback")
+def feedback():
+    try:
+        data = request.get_json()
+        rating = data.get("rating")
+        comment = data.get("comment")
+        feedback_pk = uuid.uuid4().hex
+        created_at = int(time.time())
+    
+        # Skal disse måske valideres med x-fil?
+        user_fk = 2 #TODO - get the user, that are logged in (with jwt?)
+        car_wash_location_fk = 2 #TODO - get the location from the frontend 
+
+        db, cursor = x.db()
+
+        q = """INSERT INTO feedback 
+       (feedback_pk, rating, comment, created_at, user_fk, car_wash_location_fk) 
+       VALUES (%s, %s, %s, %s, %s, %s)"""
+        cursor.execute(q, (feedback_pk, rating, comment, created_at, user_fk, car_wash_location_fk))
+
+        db.commit()
+
+        return jsonify(
+            message="Feedback sent successfully"
+        ), 201
+
+    except Exception as ex:
+        ic(ex)
+
+        return jsonify(
+            error="System under maintenance"
+        ), 500
+
+    finally:
+        if "cursor" in locals():cursor.close()
+        if "db" in locals():db.close()
