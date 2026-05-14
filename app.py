@@ -24,9 +24,12 @@ jwt = JWTManager(app)
 @app.post("/sign-up")
 def sign_up():
     try:
+
+        ic(request.json)
+
         # TODO: Validate user data
-        verification_key = x.validate_uuid4()
-        # verification_key = uuid.uuid4().hex
+        # verification_key = x.validate_uuid4()
+        verification_key = uuid.uuid4().hex
         user_first_name = x.validate_user_first_name()
         user_last_name = x.validate_user_last_name()
         user_email = x.validate_user_email()
@@ -43,9 +46,11 @@ def sign_up():
         user_pk = uuid.uuid4().hex
         user_verification_key = uuid.uuid4().hex
         ic(user_verification_key)
+
+        user_deleted_at = 0
        
        # Two times uuid to make it extra secure
-        user_reset_password_key = uuid.uuid4().hex + uuid.uuid4().hex
+        user_reset_password_key = uuid.uuid4().hex
         ic(user_reset_password_key)
 
         # Valider nummerplade fra step 2
@@ -57,8 +62,8 @@ def sign_up():
 
         # Insert bruger
          # TODO: Insert user data to the db
-        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_forgot_password, user_reset_password_key))
+        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_forgot_password, user_reset_password_key, user_deleted_at))
 
         # Insert nummerplade med reference til brugeren
         q2 = "INSERT INTO license_plate VALUES (%s, %s, %s)"
@@ -338,28 +343,6 @@ def delete_user(user_pk):
 
 
 ############################################################
-# @app.get("/locations")
-# def get_locations():
-#     try:
-#         db, cursor = x.db()
-
-#         q = "SELECT * FROM car_wash_locations"
-#         cursor.execute(q)
-#         locations = cursor.fetchall()
-
-#         if not locations:
-#             return {"error": "No locations found"}, 404
-
-#         return jsonify(locations=locations)
-
-#     except Exception as ex:
-#         ic(ex)
-#         return {"error": "System under maintenance"}, 500
-
-#     finally:
-#         if "cursor" in locals(): cursor.close()
-#         if "db" in locals(): db.close()
-
 @app.get("/locations")
 def get_locations():
     try:
@@ -462,7 +445,7 @@ def feedback():
 
 ##############################################
 @app.get("/washhall")
-def get_locations():
+def get_washhall():
     try:
         db, cursor = x.db()
 

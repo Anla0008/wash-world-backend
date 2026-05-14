@@ -67,7 +67,7 @@ def validate_user_email():
         raise Exception("company_exception user_email")
 
     # Bruges nede i "send email" 
-    return validate_user_email(user_email)
+    return user_email
 
 
 #-------------- VALIDATION FOR PASWORD --------------#
@@ -83,9 +83,22 @@ def validate_user_hashed_password():
     return user_hashed_password
 
 
+#------------ VALIDATION FOR CHECKED PASWORD ------------# !!!!!!!!!!!!!!!!!!!!!
+USER_HASHED_PASSWORD_MIN = 8
+USER_HASHED_PASSWORD_MAX = 255
+REGEX_USER_HASHED_PASSWORD = f"^.{{{USER_HASHED_PASSWORD_MIN},{USER_HASHED_PASSWORD_MAX}}}$" # Regex med en f-string.
+
+def validate_user_checked_hashed_password():
+    user_checked_hashed_password = request.json.get("user_checked_hashed_password", "").strip()
+
+    if not re.match(REGEX_USER_HASHED_PASSWORD, user_checked_hashed_password):
+        raise Exception ("company_exception user_checked_hashed_password")
+    return user_checked_hashed_password
+
+
 #--------------- VALIDATION FOR UUID ----------------#
 # 0 to 9 letters a to f
-REGEX_UUID4 = "^[0-9a-f]{32}$"
+REGEX_UUID4 = r"^[0-9a-f]{32}$"
 def validate_uuid4(uuid4):
     uuid = uuid4.strip()
     if not re.match(REGEX_UUID4, uuid):
