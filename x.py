@@ -67,7 +67,7 @@ def validate_user_email():
         raise Exception("company_exception user_email")
 
     # Bruges nede i "send email" 
-    return validate_email(user_email)
+    return validate_user_email(user_email)
 
 
 #-------------- VALIDATION FOR PASWORD --------------#
