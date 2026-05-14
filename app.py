@@ -456,7 +456,7 @@ def get_washhall():
         if not car_wash_hall_info:
             return jsonify(error="No washhalls found"), 404
 
-        return jsonify(locations=car_wash_hall_info)
+        return jsonify(car_wash_hall_info=car_wash_hall_info)
 
     except Exception as ex:
         ic(ex)
