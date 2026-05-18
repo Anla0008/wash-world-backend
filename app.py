@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 import uuid
 import time # EPOCH, timestamp
 from werkzeug.security import generate_password_hash
@@ -71,12 +71,15 @@ def sign_up():
 
         db.commit()  # Begge inserts committes samlet
 
-        # TODO: Send email with verification key
-        html = jsonify(verification_key=verification_key)
+        # TODO: Send email with verification key (5000, da flask opdaterer DB og viser tekst)
+        html = f"""
+            <h1>Velkommen til Washworld!</h1>
+            <p>Klik på linket herunder for at aktivere din konto:</p>
+            <a href="http://localhost:3000/verify/{user_verification_key}">Aktiver konto</a>
+        """
 
-        # Pointing to global email function
-        x.send_email("Activate your account", html)
-        return "Please check your email maybe it arrived in the spam folder"
+        x.send_email("Aktiver din konto", html)
+        return jsonify({"message": "Please check your email maybe it arrived in the spam folder"}), 201
     
     except Exception as ex:
         ic(ex)
@@ -89,6 +92,10 @@ def sign_up():
         
         if "company_exception user_hashed_password" in str(ex):
             return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
+        
+        # Dublikeret email 
+        if "1062" in str(ex):
+            return jsonify(error="Email already in use"), 400
 
         # Worst case
         return f"""<browser>System under maintenance</browser>""", 500
@@ -120,10 +127,11 @@ def verify_account(key):
         # TODO: Update the user_verification_key column
         cursor.execute(q, (user_verified_at, validated_key))
         db.commit()
+        
         if cursor.rowcount == 0:
             return "User already verified"
 
-        return f"Welcome to the system, you are verified"
+        return jsonify({"message": "User verified"}), 200
     
     except Exception as ex:
         ic(ex)
