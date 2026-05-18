@@ -532,6 +532,8 @@ def add_car_wash_history():
 
         car_wash_price = data.get("car_wash_price")
         car_wash_type = data.get("car_wash_type")
+        car_wash_started_at = data.get("car_wash_started_at")
+        car_wash_ended_at = data.get("car_wash_ended_at")
 
         db, cursor = x.db()
 
@@ -545,9 +547,11 @@ def add_car_wash_history():
             user_fk,
             date_of_wash,
             car_wash_price,
-            car_wash_type
+            car_wash_type,
+            car_wash_started_at,
+            car_wash_ended_at
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
         cursor.execute(q, (
@@ -558,7 +562,9 @@ def add_car_wash_history():
             user_fk,
             date_of_wash,
             car_wash_price,
-            car_wash_type
+            car_wash_type,
+            car_wash_started_at,
+            car_wash_ended_at
         ))
 
         db.commit()
