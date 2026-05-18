@@ -443,7 +443,41 @@ def feedback():
         if "db" in locals():db.close()
 
 
+##############################################  
+@app.get("/locations/<location_pk>")
+def get_single_location(location_pk):
+    try:
+        db, cursor = x.db()
+
+        q = """
+            SELECT 
+                l.*,
+                COUNT(h.car_wash_pk) AS car_wash_hall_number
+            FROM car_wash_locations l
+            LEFT JOIN car_wash_hall_info h
+                ON l.location_pk = h.car_wash_location_fk
+            WHERE l.location_pk = %s
+            GROUP BY l.location_pk
+        """
+
+        cursor.execute(q, (location_pk,))
+        location = cursor.fetchone()
+
+        if not location:
+            return jsonify(error="Location not found"), 404
+
+        return jsonify(location=location)
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
 ##############################################
+
 @app.get("/washhall")
 def get_washhall():
     try:
