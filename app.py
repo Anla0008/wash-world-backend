@@ -451,13 +451,13 @@ def get_single_location(location_pk):
 
         q = """
             SELECT 
-                l.*,
-                COUNT(h.car_wash_pk) AS car_wash_hall_number
-            FROM car_wash_locations l
-            LEFT JOIN car_wash_hall_info h
-                ON l.location_pk = h.car_wash_location_fk
-            WHERE l.location_pk = %s
-            GROUP BY l.location_pk
+                car_wash_locations.*,
+                COUNT(car_wash_hall_info.car_wash_pk) AS car_wash_hall_number
+            FROM car_wash_locations
+            LEFT JOIN car_wash_hall_info
+                ON car_wash_locations.location_pk = car_wash_hall_info.car_wash_location_fk
+            WHERE car_wash_locations.location_pk = %s
+            GROUP BY car_wash_locations.location_pk
         """
 
         cursor.execute(q, (location_pk,))
