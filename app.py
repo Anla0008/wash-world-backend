@@ -158,18 +158,17 @@ def login():
 
         # TODO: Connect to the database
         db, cursor = x.db()
-        q = "SELECT user_email, user_hashed_password FROM users WHERE user_email = %s AND user_hashed_password = %s"
+        q = "SELECT * FROM users WHERE user_email = %s"
         cursor.execute(q, (user_email,))
         user = cursor.fetchone()
 
         # Tjek at brugeren findes og at password matcher
         if not user or not check_password_hash(user["user_hashed_password"], password):
-            return "Invalid email or password", 401
-
+            return jsonify(error="Invalid email or password"), 401
 
         # Create JWT token
-        access_token = create_access_token(identity=str(user)),
-        return jsonify(access_token=access_token)
+        access_token = create_access_token(identity=user["user_pk"])
+        return jsonify(access_token=access_token), 200
         
     
     except Exception as ex:
