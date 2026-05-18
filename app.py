@@ -310,7 +310,7 @@ def get_user(user_pk):
     cursor.close()
     db.close()
 
-    return {"user": user}
+    return {"user": user} #Dette er en dictionary
 
 
 ############################################################
@@ -476,8 +476,7 @@ def get_single_location(location_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
-##############################################
-
+############################################## - TROR IKKE BLIVER BRUGT - SKAL UNDERSØGES
 @app.get("/washhall")
 def get_washhall():
     try:
@@ -499,3 +498,77 @@ def get_washhall():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
+##############################################
+@app.get("/favorites/<user_pk>")
+def get_favorites(user_pk):
+    try:
+        db, cursor = x.db()
+
+        q = """ 
+            SELECT car_wash_locations.* 
+            FROM car_wash_locations 
+            JOIN favorites 
+                ON car_wash_locations.location_pk = favorites.car_wash_location_fk 
+            WHERE favorites.user_fk = %s;
+        """
+
+        cursor.execute(q, (user_pk,))
+        favorites = cursor.fetchall()
+
+        return jsonify(favorites=favorites)
+    
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+    
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+##############################################
+@app.post("/favorites")
+def add_favorite():
+    try:
+        data=request.get_json()
+        user_fk="2" # ToDo: Hent fra JWT når login er klar
+        car_wash_location_fk = data.get("location_pk")
+        favorit_pk = uuid.uuid4().hex
+
+        db, cursor = x.db()
+
+        q= "INSERT INTO favorites VALUES (%s, %s, %s)"
+        cursor.execute(q,(favorit_pk, user_fk, car_wash_location_fk))
+        db.commit()
+
+        return jsonify(message="Favorite added"), 201
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()  
+
+##############################################
+@app.delete("/favorites/<location_pk>")
+def remove_favorit(location_pk):
+    try:
+        user_fk = 2 # ToDo: Hent fra JWT når login er klar
+
+        db, cursor = x.db()
+
+        q= "DELETE FROM favorites WHERE user_fk = %s AND car_wash_location_fk = %s"
+        cursor.execute(q,(user_fk, location_pk))
+        db.commit()
+
+        return jsonify(message="Favorite removed"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()  
