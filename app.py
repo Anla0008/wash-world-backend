@@ -484,7 +484,69 @@ def get_single_location(location_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
-############################################## - TROR IKKE BLIVER BRUGT - SKAL UNDERSØGES
+##############################################
+@app.get("/car-wash-history/<user_pk>")
+def get_car_wash_history(user_pk):
+    try:
+        db, cursor = x.db()
+
+        q = "SELECT * FROM car_wash_history WHERE user_fk = %s"
+        cursor.execute(q, (user_pk,))
+        car_wash_history = cursor.fetchall()
+
+        if not car_wash_history:
+            return jsonify(error="No wash history found"), 404
+
+        return jsonify(car_wash_history=car_wash_history)
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+############################################################
+@app.post("/car-wash-history")
+def add_car_wash_history():
+    try:
+        car_wash_history_pk = uuid.uuid4().hex
+        liscense_plate_fk = jwt.get("liscense_plate_fk")
+        car_wash_location_fk = jwt.get("car_wash_location_fk")
+        car_wash_hall_fk = jwt.get("car_wash_hall_fk")
+        user_fk = jwt.get("user_pk")
+        date_of_wash = int(time.time())
+        car_wash_price = request.json.get("car_wash_price")
+        car_wash_type = request.json.get("car_wash_type")
+
+
+        db, cursor = x.db()
+
+        q = """INSERT INTO car_wash_history 
+       (car_wash_history_pk, liscense_plate_fk, car_wash_location_fk, car_wash_hall_fk, user_fk, date_of_wash, car_wash_price, car_wash_type) 
+       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
+        cursor.execute(q, (car_wash_history_pk, liscense_plate_fk, car_wash_location_fk, car_wash_hall_fk, user_fk, date_of_wash, car_wash_price, car_wash_type))
+
+        db.commit()
+
+        return jsonify(
+            message="Car wash history added successfully"
+        ), 201
+
+    except Exception as ex:
+        ic(ex)
+
+        return jsonify(
+            error="System under maintenance"
+        ), 500
+
+    finally:
+        if "cursor" in locals():cursor.close()
+        if "db" in locals():db.close()
+
+##############################################
 @app.get("/washhall")
 def get_washhall():
     try:
