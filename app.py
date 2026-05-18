@@ -483,6 +483,10 @@ def get_single_location(location_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+#######################################################################################
+#                           INFO RELATING WASH-PROCESS                                #
+#######################################################################################
+
 ##############################################
 @app.get("/car-wash-history/<user_pk>")
 def get_car_wash_history(user_pk):
@@ -509,41 +513,68 @@ def get_car_wash_history(user_pk):
 
 ############################################################
 @app.post("/car-wash-history")
+@jwt_required()
 def add_car_wash_history():
     try:
-        car_wash_history_pk = uuid.uuid4().hex
-        liscense_plate_fk = jwt.get("liscense_plate_fk")
-        car_wash_location_fk = jwt.get("car_wash_location_fk")
-        car_wash_hall_fk = jwt.get("car_wash_hall_fk")
-        user_fk = jwt.get("user_pk")
-        date_of_wash = int(time.time())
-        car_wash_price = request.json.get("car_wash_price")
-        car_wash_type = request.json.get("car_wash_type")
+        data = request.get_json()
 
+        car_wash_history_pk = uuid.uuid4().hex
+
+        # Fra frontend
+        license_plate_fk = data.get("license_plate_fk")
+        car_wash_location_fk = data.get("car_wash_location_fk")
+        car_wash_hall_fk = data.get("car_wash_hall_fk")
+
+        # Fra JWT
+        user_fk = get_jwt_identity()
+
+        date_of_wash = int(time.time())
+
+        car_wash_price = data.get("car_wash_price")
+        car_wash_type = data.get("car_wash_type")
 
         db, cursor = x.db()
 
-        q = """INSERT INTO car_wash_history 
-       (car_wash_history_pk, liscense_plate_fk, car_wash_location_fk, car_wash_hall_fk, user_fk, date_of_wash, car_wash_price, car_wash_type) 
-       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-        cursor.execute(q, (car_wash_history_pk, liscense_plate_fk, car_wash_location_fk, car_wash_hall_fk, user_fk, date_of_wash, car_wash_price, car_wash_type))
+        q = """
+        INSERT INTO car_wash_history
+        (
+            car_wash_history_pk,
+            license_plate_fk,
+            car_wash_location_fk,
+            car_wash_hall_fk,
+            user_fk,
+            date_of_wash,
+            car_wash_price,
+            car_wash_type
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        cursor.execute(q, (
+            car_wash_history_pk,
+            license_plate_fk,
+            car_wash_location_fk,
+            car_wash_hall_fk,
+            user_fk,
+            date_of_wash,
+            car_wash_price,
+            car_wash_type
+        ))
 
         db.commit()
 
-        return jsonify(
-            message="Car wash history added successfully"
-        ), 201
+        return jsonify(message="Car wash history added"), 201
 
     except Exception as ex:
         ic(ex)
-
-        return jsonify(
-            error="System under maintenance"
-        ), 500
+        return jsonify(error=str(ex)), 500
 
     finally:
-        if "cursor" in locals():cursor.close()
-        if "db" in locals():db.close()
+        if "cursor" in locals():
+            cursor.close()
+
+        if "db" in locals():
+            db.close()
 
 ##############################################
 @app.get("/washhall")
@@ -567,6 +598,10 @@ def get_washhall():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
+
+
+
 
 ##############################################
 @app.get("/favorites/<user_pk>")
