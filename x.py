@@ -160,19 +160,23 @@ def send_email(subject, html):
 
 
 #------------------- SEND DAMAGE REPORT EMAIL ---------------------#
+# Tried to match this function with the validate email function
 def send_damage_report_email(subject, html):
     try:
         sender_email = "leamhejlskov@gmail.com" # TODO: skift til brugerens email
         password = "sfra rbpr hiao rrlu"
 
-        receiver_email = "lamo0004@stud.ek.dk" # Fast modtager
+        # Fixed receiver. All damage reports go to this address – should be washworlds service email
+        receiver_email = "lamo0004@stud.ek.dk" 
 
+        # Build the email message
         message = MIMEMultipart()
         message["From"] = "Washworld"
         message["To"] = receiver_email
         message["Subject"] = subject
         message.attach(MIMEText(html, "html"))
 
+        # Connect to Gmail SMTP and send
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(sender_email, password)

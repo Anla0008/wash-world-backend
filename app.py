@@ -490,13 +490,26 @@ def get_single_location(location_pk):
 #######################################################################################
 
 ##############################################
-@app.get("/car-wash-history/<user_pk>")
-def get_car_wash_history(user_pk):
+@app.get("/car-wash-history/<license_plate_pk>")
+def get_car_wash_history(license_plate_pk):
     try:
         db, cursor = x.db()
 
-        q = "SELECT * FROM car_wash_history WHERE user_fk = %s"
-        cursor.execute(q, (user_pk,))
+        # Henter alle vaske for en bruger ved at gå gennem nummerpladen
+        q = """
+        SELECT 
+            car_wash_history.car_wash_history_pk,
+            car_wash_locations.location_name,
+            car_wash_history.date_of_wash,
+            car_wash_history.car_wash_type,
+            car_wash_history.car_wash_price
+        FROM car_wash_history
+        JOIN car_wash_locations ON car_wash_history.car_wash_location_fk = car_wash_locations.location_pk
+        JOIN license_plate ON car_wash_history.license_plate_fk = license_plate.license_plate_pk
+        WHERE license_plate.license_plate_pk = %s
+        """
+
+        cursor.execute(q, (license_plate_pk,))
         car_wash_history = cursor.fetchall()
 
         if not car_wash_history:
@@ -702,24 +715,41 @@ def remove_favorit(location_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()  
 
+
 ##############################################
 @app.post("/skaderapportering")
 def skaderapportering():
     try:
         data = request.json
-        beskrivelse = (data.get("beskrivelse") or "").strip()
+        description = (data.get("description") or "").strip()
         user_email = (data.get("user_email") or "Ukendt").strip()
 
-        if not beskrivelse:
-            return jsonify(error="Beskrivelse mangler"), 400
+        # Validate that description is not empty
+        if not description:
+            return jsonify(error="Description mangler"), 400
 
+        # Build the email HTML body
         html = f"""
             <h1>Skaderapport</h1>
-            <p><strong>Fra:</strong> {user_email}</p>
-            <p><strong>Beskrivelse:</strong> {beskrivelse}</p>
+            <p><strong>Fra:</strong>{user_email}</p>
+            <p><strong>Beskrivelse:</strong>{description}</p>
         """
         x.send_damage_report_email("Skaderapport", html)
         return jsonify(message="Skaderapport sendt"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+    
+
+############################################################
+@app.post("/logout")
+@jwt_required()
+def logout():
+    try:
+        # JWT er stateless – log ud håndteres primært på frontend
+        # Denne route bekræfter blot at tokenet er gyldigt og returnerer success
+        return jsonify(message="Logged out successfully"), 200
 
     except Exception as ex:
         ic(ex)
