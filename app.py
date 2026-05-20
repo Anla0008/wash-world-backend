@@ -93,9 +93,11 @@ def sign_up():
         if "company_exception user_hashed_password" in str(ex):
             return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
         
-        # Dublikeret email 
-        if "1062" in str(ex):
+        # Dublikeret email eller nummerplade
+        if "1062" in str(ex) and "user_email" in str(ex):
             return jsonify(error="Email already in use"), 400
+        if "1062" in str(ex) and "plate_number" in str(ex):
+            return jsonify(error="License plate already in use"), 400
 
         # Worst case
         return f"""<browser>System under maintenance</browser>""", 500
