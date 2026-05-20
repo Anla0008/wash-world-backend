@@ -190,34 +190,46 @@ def login():
 
 
 ############################################################
-@app.post("/forgot-password")
-def forgot_password():
+@app.post("/reset-password/<key>")
+def reset_password(key):
     try:
-        email = x.validate_user_email(request.form.get("email", ""))
+        # Valider nøglen fra URL'en
+        validated_key = x.validate_uuid4(key)
+
+        # Valider nyt kodeord fra request body
+        password = x.validate_user_hashed_password()
+
+        # Hash kodeordet
+        new_hashed_password = generate_password_hash(password)
+
         db, cursor = x.db()
-        q = "SELECT user_reset_password_key AS 'key' FROM users WHERE user_email = %s"
-        cursor.execute(q, (email,))
-        row = cursor.fetchone()
 
-        if not row:
-            return "Email not found", 400
+        # Opdater kodeordet hvor nøglen matcher
+        q = """
+            UPDATE users 
+            SET user_hashed_password = %s 
+            WHERE user_reset_password = %s
+        """
+        cursor.execute(q, (new_hashed_password, validated_key))
+        db.commit()
 
-        html = jsonify(user_reset_password_key=row["key"])
+        # Hvis ingen rækker blev opdateret, var nøglen ikke gyldig
+        if cursor.rowcount == 0:
+            return jsonify(error_code="invalid_key"), 404
 
-        # Pointing to global email function
-        x.send_email("Reset your password", html)
+        return jsonify(message="Password changed, please login"), 200
 
-        # return html
-        return "Check your email"
-    
     except Exception as ex:
         ic(ex)
 
-        if "company_exception email" in str(ex):
-            return "Invalid email", 400
+        if "company_exception user_hashed_password" in str(ex):
+            return jsonify(error_code="invalid_password"), 400
 
-        return str(ex), 500
-    
+        if "company_exception uuid4 invalid" in str(ex):
+            return jsonify(error_code="invalid_key"), 400
+
+        return jsonify(error="System under maintenance"), 500
+
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
