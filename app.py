@@ -95,9 +95,9 @@ def sign_up():
         
         # Dublikeret email eller nummerplade
         if "1062" in str(ex) and "user_email" in str(ex):
-            return jsonify(error="Email already in use"), 400
+            return jsonify(error_code="email_taken"), 409
         if "1062" in str(ex) and "plate_number" in str(ex):
-            return jsonify(error="License plate already in use"), 400
+            return jsonify(error_code="plate_taken"), 409
 
         # Worst case
         return f"""<browser>System under maintenance</browser>""", 500
