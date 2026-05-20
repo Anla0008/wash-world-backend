@@ -8,6 +8,8 @@ import x
 
 from flask_cors import CORS
 
+from datetime import timedelta # For JWT token expiration
+
 from icecream import ic
 ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
@@ -17,6 +19,7 @@ app = Flask(__name__)
 CORS(app)  # allows everything
 
 app.config["JWT_SECRET_KEY"] = "super-secret-key" # From chatGPT (jwt)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
 jwt = JWTManager(app)
 
 
@@ -93,9 +96,11 @@ def sign_up():
         if "company_exception user_hashed_password" in str(ex):
             return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
         
-        # Dublikeret email 
-        if "1062" in str(ex):
-            return jsonify(error="Email already in use"), 400
+        # Dublikeret email eller nummerplade
+        if "1062" in str(ex) and "user_email" in str(ex):
+            return jsonify(error_code="email_taken"), 409
+        if "1062" in str(ex) and "plate_number" in str(ex):
+            return jsonify(error_code="plate_taken"), 409
 
         # Worst case
         return f"""<browser>System under maintenance</browser>""", 500
@@ -167,7 +172,7 @@ def login():
             return jsonify(error="Invalid email or password"), 401
 
         # Create JWT token
-        access_token = create_access_token(identity=user["user_pk"])
+        access_token = create_access_token(identity=user["user_pk"]) # user_pk gemmes INDE I tokenet
         return jsonify(access_token=access_token), 200
         
     
@@ -188,34 +193,46 @@ def login():
 
 
 ############################################################
-@app.post("/forgot-password")
-def forgot_password():
+@app.post("/reset-password/<key>")
+def reset_password_with_key(key):
     try:
-        email = x.validate_user_email(request.form.get("email", ""))
+        # Valider nøglen fra URL'en
+        validated_key = x.validate_uuid4(key)
+
+        # Valider nyt kodeord fra request body
+        password = x.validate_user_hashed_password()
+
+        # Hash kodeordet
+        new_hashed_password = generate_password_hash(password)
+
         db, cursor = x.db()
-        q = "SELECT user_reset_password_key AS 'key' FROM users WHERE user_email = %s"
-        cursor.execute(q, (email,))
-        row = cursor.fetchone()
 
-        if not row:
-            return "Email not found", 400
+        # Opdater kodeordet hvor nøglen matcher
+        q = """
+            UPDATE users 
+            SET user_hashed_password = %s 
+            WHERE user_reset_password = %s
+        """
+        cursor.execute(q, (new_hashed_password, validated_key))
+        db.commit()
 
-        html = jsonify(user_reset_password_key=row["key"])
+        # Hvis ingen rækker blev opdateret, var nøglen ikke gyldig
+        if cursor.rowcount == 0:
+            return jsonify(error_code="invalid_key"), 404
 
-        # Pointing to global email function
-        x.send_email("Reset your password", html)
+        return jsonify(message="Password changed, please login"), 200
 
-        # return html
-        return "Check your email"
-    
     except Exception as ex:
         ic(ex)
 
-        if "company_exception email" in str(ex):
-            return "Invalid email", 400
+        if "company_exception user_hashed_password" in str(ex):
+            return jsonify(error_code="invalid_password"), 400
 
-        return str(ex), 500
-    
+        if "company_exception uuid4 invalid" in str(ex):
+            return jsonify(error_code="invalid_key"), 400
+
+        return jsonify(error="System under maintenance"), 500
+
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
@@ -443,6 +460,7 @@ def profile_information(user_pk):
 
 ############################################################
 @app.post("/feedback")
+@jwt_required()  
 def feedback():
     try:
         data = request.get_json()
@@ -452,7 +470,7 @@ def feedback():
         created_at = int(time.time())
     
         # Skal disse måske valideres med x-fil?
-        user_fk = 2 #TODO - get the user, that are logged in (with jwt?)
+        user_fk = get_jwt_identity()
         car_wash_location_fk = 2 #TODO - get the location from the frontend 
 
         db, cursor = x.db()
@@ -518,13 +536,26 @@ def get_single_location(location_pk):
 #######################################################################################
 
 ##############################################
-@app.get("/car-wash-history/<user_pk>")
-def get_car_wash_history(user_pk):
+@app.get("/car-wash-history/<license_plate_pk>")
+def get_car_wash_history(license_plate_pk):
     try:
         db, cursor = x.db()
 
-        q = "SELECT * FROM car_wash_history WHERE user_fk = %s"
-        cursor.execute(q, (user_pk,))
+        # Henter alle vaske for en bruger ved at gå gennem nummerpladen
+        q = """
+        SELECT 
+            car_wash_history.car_wash_history_pk,
+            car_wash_locations.location_name,
+            car_wash_history.date_of_wash,
+            car_wash_history.car_wash_type,
+            car_wash_history.car_wash_price
+        FROM car_wash_history
+        JOIN car_wash_locations ON car_wash_history.car_wash_location_fk = car_wash_locations.location_pk
+        JOIN license_plate ON car_wash_history.license_plate_fk = license_plate.license_plate_pk
+        WHERE license_plate.license_plate_pk = %s
+        """
+
+        cursor.execute(q, (license_plate_pk,))
         car_wash_history = cursor.fetchall()
 
         if not car_wash_history:
@@ -612,20 +643,28 @@ def add_car_wash_history():
         if "db" in locals():
             db.close()
 
+
 ##############################################
-@app.get("/washhall")
-def get_washhall():
+@app.get("/wash-hall/<location_pk>")
+def get_wash_halls(location_pk):
     try:
         db, cursor = x.db()
 
-        q = "SELECT * FROM car_wash_hall_info"
-        cursor.execute(q)
-        car_wash_hall_info = cursor.fetchall()
+        q = """
+        SELECT car_wash_hall_info.car_wash_hall_number
+        FROM car_wash_hall_info
+        INNER JOIN car_wash_locations
+        ON car_wash_hall_info.car_wash_location_fk = car_wash_locations.location_pk
+        WHERE car_wash_locations.location_pk = %s;
+        """
 
-        if not car_wash_hall_info:
-            return jsonify(error="No washhalls found"), 404
+        cursor.execute(q, (location_pk,))
+        wash_halls = cursor.fetchall()
 
-        return jsonify(car_wash_hall_info=car_wash_hall_info)
+        if not wash_halls:
+            return jsonify(error="No washhalls found for this location"), 404
+
+        return jsonify(wash_halls=wash_halls)
 
     except Exception as ex:
         ic(ex)
@@ -634,7 +673,6 @@ def get_washhall():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
-
 
 ##############################################
 @app.get("/favorites")
@@ -722,3 +760,30 @@ def remove_favorit(location_pk):
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()  
+
+
+##############################################
+@app.post("/skaderapportering")
+def skaderapportering():
+    try:
+        data = request.json
+        description = (data.get("description") or "").strip()
+        user_email = (data.get("user_email") or "Ukendt").strip()
+
+        # Validate that description is not empty
+        if not description:
+            return jsonify(error="Description mangler"), 400
+
+        # Build the email HTML body
+        html = f"""
+            <h1>Skaderapport</h1>
+            <p><strong>Fra:</strong>{user_email}</p>
+            <p><strong>Beskrivelse:</strong>{description}</p>
+        """
+        x.send_damage_report_email("Skaderapport", html)
+        return jsonify(message="Skaderapport sendt"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+    
