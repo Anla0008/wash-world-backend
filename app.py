@@ -692,3 +692,26 @@ def remove_favorit(location_pk):
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()  
+
+##############################################
+@app.post("/skaderapportering")
+def skaderapportering():
+    try:
+        data = request.json
+        beskrivelse = (data.get("beskrivelse") or "").strip()
+        user_email = (data.get("user_email") or "Ukendt").strip()
+
+        if not beskrivelse:
+            return jsonify(error="Beskrivelse mangler"), 400
+
+        html = f"""
+            <h1>Skaderapport</h1>
+            <p><strong>Fra:</strong> {user_email}</p>
+            <p><strong>Beskrivelse:</strong> {beskrivelse}</p>
+        """
+        x.send_damage_report_email("Skaderapport", html)
+        return jsonify(message="Skaderapport sendt"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
