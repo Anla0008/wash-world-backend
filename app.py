@@ -741,16 +741,3 @@ def skaderapportering():
         ic(ex)
         return jsonify(error="System under maintenance"), 500
     
-
-############################################################
-@app.post("/logout")
-@jwt_required()
-def logout():
-    try:
-        # JWT er stateless – log ud håndteres primært på frontend
-        # Denne route bekræfter blot at tokenet er gyldigt og returnerer success
-        return jsonify(message="Logged out successfully"), 200
-
-    except Exception as ex:
-        ic(ex)
-        return jsonify(error="System under maintenance"), 500
