@@ -582,20 +582,28 @@ def add_car_wash_history():
         if "db" in locals():
             db.close()
 
+
 ##############################################
-@app.get("/washhall")
-def get_washhall():
+@app.get("/wash-hall/<location_pk>")
+def get_wash_halls(location_pk):
     try:
         db, cursor = x.db()
 
-        q = "SELECT * FROM car_wash_hall_info"
-        cursor.execute(q)
-        car_wash_hall_info = cursor.fetchall()
+        q = """
+        SELECT car_wash_hall_info.car_wash_hall_number
+        FROM car_wash_hall_info
+        INNER JOIN car_wash_locations
+        ON car_wash_hall_info.car_wash_location_fk = car_wash_locations.location_pk
+        WHERE car_wash_locations.location_pk = %s;
+        """
 
-        if not car_wash_hall_info:
-            return jsonify(error="No washhalls found"), 404
+        cursor.execute(q, (location_pk,))
+        wash_halls = cursor.fetchall()
 
-        return jsonify(car_wash_hall_info=car_wash_hall_info)
+        if not wash_halls:
+            return jsonify(error="No washhalls found for this location"), 404
+
+        return jsonify(wash_halls=wash_halls)
 
     except Exception as ex:
         ic(ex)
@@ -604,7 +612,6 @@ def get_washhall():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
-
 
 ##############################################
 @app.get("/favorites")
