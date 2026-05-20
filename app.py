@@ -194,7 +194,7 @@ def login():
 
 ############################################################
 @app.post("/reset-password/<key>")
-def reset_password(key):
+def reset_password_with_key(key):
     try:
         # Valider nøglen fra URL'en
         validated_key = x.validate_uuid4(key)
