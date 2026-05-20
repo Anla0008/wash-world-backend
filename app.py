@@ -606,13 +606,13 @@ def get_washhall():
         if "db" in locals(): db.close()
 
 
-
-
-
 ##############################################
-@app.get("/favorites/<user_pk>")
-def get_favorites(user_pk):
+@app.get("/favorites")
+@jwt_required()
+def get_favorites():
     try:
+        user_fk = get_jwt_identity()
+
         db, cursor = x.db()
 
         q = """ 
@@ -623,10 +623,10 @@ def get_favorites(user_pk):
             WHERE favorites.user_fk = %s;
         """
 
-        cursor.execute(q, (user_pk,))
+        cursor.execute(q, (user_fk,))
         favorites = cursor.fetchall()
 
-        return jsonify(favorites=favorites)
+        return jsonify(favorites=favorites), 200
     
     except Exception as ex:
         ic(ex)
@@ -638,39 +638,49 @@ def get_favorites(user_pk):
 
 ##############################################
 @app.post("/favorites")
+@jwt_required()
 def add_favorite():
     try:
-        data=request.get_json()
-        user_fk="2" # ToDo: Hent fra JWT når login er klar
+        data = request.get_json()
+
+        user_fk = get_jwt_identity()
         car_wash_location_fk = data.get("location_pk")
         favorit_pk = uuid.uuid4().hex
 
+        if not car_wash_location_fk:
+            return jsonify(error="Missing location_pk"), 400
+
         db, cursor = x.db()
 
-        q= "INSERT INTO favorites VALUES (%s, %s, %s)"
-        cursor.execute(q,(favorit_pk, user_fk, car_wash_location_fk))
+        q = "INSERT INTO favorites VALUES (%s, %s, %s)"
+        cursor.execute(q, (favorit_pk, user_fk, car_wash_location_fk))
         db.commit()
 
         return jsonify(message="Favorite added"), 201
 
     except Exception as ex:
         ic(ex)
+
+        if "1062" in str(ex):
+            return jsonify(error="Favorite already exists"), 409
+
         return jsonify(error="System under maintenance"), 500
 
     finally:
         if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()  
+        if "db" in locals(): db.close()
 
 ##############################################
 @app.delete("/favorites/<location_pk>")
+@jwt_required()
 def remove_favorit(location_pk):
     try:
-        user_fk = 2 # ToDo: Hent fra JWT når login er klar
+        user_fk = get_jwt_identity()
 
         db, cursor = x.db()
 
-        q= "DELETE FROM favorites WHERE user_fk = %s AND car_wash_location_fk = %s"
-        cursor.execute(q,(user_fk, location_pk))
+        q = "DELETE FROM favorites WHERE user_fk = %s AND car_wash_location_fk = %s"
+        cursor.execute(q, (user_fk, location_pk))
         db.commit()
 
         return jsonify(message="Favorite removed"), 200
