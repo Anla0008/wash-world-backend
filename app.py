@@ -350,12 +350,43 @@ def delete_user(user_pk):
 
 
 ############################################################
+# @app.get("/locations")
+# def get_locations():
+#     try:
+#         db, cursor = x.db()
+
+#         q = "SELECT * FROM car_wash_locations"
+#         cursor.execute(q)
+#         locations = cursor.fetchall()
+
+#         if not locations:
+#             return jsonify(error="No locations found"), 404
+
+#         return jsonify(locations=locations)
+
+#     except Exception as ex:
+#         ic(ex)
+#         return jsonify(error="System under maintenance"), 500
+
+#     finally:
+#         if "cursor" in locals(): cursor.close()
+#         if "db" in locals(): db.close()
+
 @app.get("/locations")
 def get_locations():
     try:
         db, cursor = x.db()
 
-        q = "SELECT * FROM car_wash_locations"
+        q = """
+            SELECT 
+                car_wash_locations.*,
+                COUNT(car_wash_hall_info.car_wash_pk) AS car_wash_hall_number
+            FROM car_wash_locations
+            LEFT JOIN car_wash_hall_info
+                ON car_wash_locations.location_pk = car_wash_hall_info.car_wash_location_fk
+            GROUP BY car_wash_locations.location_pk
+        """
+
         cursor.execute(q)
         locations = cursor.fetchall()
 
@@ -371,7 +402,6 @@ def get_locations():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
-
 
 ############################################################
 @app.patch("/profile-information/<user_pk>")
