@@ -169,7 +169,7 @@ def login():
             return jsonify(error="Invalid email or password"), 401
 
         # Create JWT token
-        access_token = create_access_token(identity=user["user_pk"])
+        access_token = create_access_token(identity=user["user_pk"]) # user_pk gemmes INDE I tokenet
         return jsonify(access_token=access_token), 200
         
     
@@ -415,6 +415,7 @@ def profile_information(user_pk):
 
 ############################################################
 @app.post("/feedback")
+@jwt_required()  
 def feedback():
     try:
         data = request.get_json()
@@ -424,7 +425,7 @@ def feedback():
         created_at = int(time.time())
     
         # Skal disse måske valideres med x-fil?
-        user_fk = 2 #TODO - get the user, that are logged in (with jwt?)
+        user_fk = get_jwt_identity()
         car_wash_location_fk = 2 #TODO - get the location from the frontend 
 
         db, cursor = x.db()
