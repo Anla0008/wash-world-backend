@@ -70,8 +70,8 @@ def sign_up():
 
         # Insert bruger
          # TODO: Insert user data to the db
-        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_forgot_password, user_reset_password_key, user_deleted_at))
+        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key))
 
         # Insert nummerplade med reference til brugeren
         q2 = "INSERT INTO license_plate VALUES (%s, %s, %s)"
@@ -201,6 +201,59 @@ def login():
     finally: 
         if "cursor" in locals(): cursor.close() # Locals refers to anything inside the try or except
         if "db" in locals(): db.close() # db refers to anything inside the database
+
+
+#######################################################################################
+#                                   FORGOT PASSWORD                                  #
+#######################################################################################
+
+                # POST FORGOT PASSWORD #
+############################################################
+@app.post("/forgot-password")
+def forgot_password():
+    try:
+        user_email = x.validate_user_email()
+
+        db, cursor = x.db()
+
+        # Tjek om emailen findes
+        cursor.execute("SELECT * FROM users WHERE user_email = %s", (user_email,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify(error_code="email_not_found"), 404
+
+        # Generer ny reset-nøgle
+        reset_key = uuid.uuid4().hex
+
+        # Gem nøglen i databasen
+        cursor.execute(
+            "UPDATE users SET user_reset_password_key = %s WHERE user_email = %s",
+            (reset_key, user_email)
+        )
+        db.commit()
+
+        # Send email med reset-link
+        html = f"""
+            <h1>Nulstil din adgangskode</h1>
+            <p>Klik på linket herunder for at nulstille din adgangskode:</p>
+            <a href="http://localhost:3000/reset-password/{reset_key}">Nulstil adgangskode</a>
+        """
+        x.send_email("Nulstil adgangskode", html)
+
+        return jsonify(message="Email sent"), 200
+
+    except Exception as ex:
+        ic(ex)
+        if "company_exception email" in str(ex):
+            return jsonify(error_code="email_not_found"), 400
+
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+    
 
 #######################################################################################
 #                                     RESET PASSWORD                                  #
