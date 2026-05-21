@@ -397,7 +397,7 @@ def reset_password(key):
 
                     # POST SUBSCRIPTION #
 ############################################################
-@app.post("/subscriptions")
+@app.post("/subscription")
 @jwt_required()
 def add_subscription():
     try:
