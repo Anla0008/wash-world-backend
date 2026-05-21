@@ -23,6 +23,11 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
 jwt = JWTManager(app)
 
 
+#######################################################################################
+#                                     SIGN UP                                        #
+#######################################################################################
+
+                    # POST SIGN UP #
 ############################################################
 @app.post("/sign-up")
 def sign_up():
@@ -110,6 +115,7 @@ def sign_up():
         if "db" in locals(): db.close() # db refers to anything inside the database
 
 
+                # GET VERIFY ACCOUNT #
 ############################################################
 @app.get("/verify/<key>")
 def verify_account(key):
@@ -152,6 +158,11 @@ def verify_account(key):
         if "db" in locals(): db.close()
 
 
+#######################################################################################
+#                                     LOG IN                                         #
+#######################################################################################
+
+                    # POST LOGIN #
 ############################################################
 @app.post("/")
 def login():
@@ -191,7 +202,11 @@ def login():
         if "cursor" in locals(): cursor.close() # Locals refers to anything inside the try or except
         if "db" in locals(): db.close() # db refers to anything inside the database
 
+#######################################################################################
+#                                     RESET PASSWORD                                  #
+#######################################################################################
 
+                # GET RESET PASSWORD #
 ############################################################
 @app.get("/reset-password/<key>")
 def show_reset_password(key):
@@ -228,6 +243,7 @@ def show_reset_password(key):
         if "db" in locals(): db.close()
 
 
+                # POST RESET PASSWORD #
 ############################################################
 @app.post("/reset-password/<key>")
 def reset_password(key):
@@ -280,83 +296,11 @@ def reset_password(key):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+#######################################################################################
+#                              PROFILE INFORMATION                                   #
+#######################################################################################
 
-############################################################
-# HVAD VIL VI MED DENNE ?????????????????????
-@app.get("/users/<user_pk>")
-def get_user(user_pk):
-    db, cursor = x.db() 
-
-    cursor.execute("SELECT * FROM users WHERE user_pk = %s", (user_pk,))
-    user = cursor.fetchone()
-
-    cursor.close()
-    db.close()
-
-    return {"user": user} #Dette er en dictionary
-
-
-############################################################
-@app.delete("/users/<user_pk>")
-def delete_user(user_pk):
-    try:
-        db, cursor = x.db()
-
-        # Slet relaterede data først
-        cursor.execute("DELETE FROM feedback WHERE user_fk = %s", (user_pk,))
-        cursor.execute("DELETE FROM favorites WHERE user_fk = %s", (user_pk,))
-        cursor.execute("DELETE FROM license_plate WHERE user_fk = %s", (user_pk,))
-
-        # Slet så brugeren
-        cursor.execute("DELETE FROM users WHERE user_pk = %s", (user_pk,))
-        db.commit()
-
-        if cursor.rowcount == 0:
-            return {"error": "User not found"}, 404
-
-        return {"error": "User deleted"}, 200
-
-    except Exception as ex:
-        ic(ex)
-        return {"error": "System under maintenance"}, 500
-
-    finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
-
-
-############################################################
-@app.get("/locations")
-def get_locations():
-    try:
-        db, cursor = x.db()
-
-        q = """
-            SELECT 
-                car_wash_locations.*,
-                COUNT(car_wash_hall_info.car_wash_pk) AS car_wash_hall_number
-            FROM car_wash_locations
-            LEFT JOIN car_wash_hall_info
-                ON car_wash_locations.location_pk = car_wash_hall_info.car_wash_location_fk
-            GROUP BY car_wash_locations.location_pk
-        """
-
-        cursor.execute(q)
-        locations = cursor.fetchall()
-
-        if not locations:
-            return jsonify(error="No locations found"), 404
-
-        return jsonify(locations=locations)
-
-    except Exception as ex:
-        ic(ex)
-        return jsonify(error="System under maintenance"), 500
-
-    finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
-
+            # PATH PROFILE INFORMATION #
 ############################################################
 @app.patch("/profile-information/<user_pk>")
 def profile_information(user_pk):
@@ -394,48 +338,81 @@ def profile_information(user_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+#######################################################################################
+#                                     DELETE USER                                    #
+#######################################################################################
 
+                        # DELETE USER #
 ############################################################
-@app.post("/feedback")
-@jwt_required()  
-def feedback():
+@app.delete("/users/<user_pk>")
+def delete_user(user_pk):
     try:
-        data = request.get_json()
-        rating = data.get("rating")
-        comment = data.get("comment")
-        feedback_pk = uuid.uuid4().hex
-        created_at = int(time.time())
-    
-        # Skal disse måske valideres med x-fil?
-        user_fk = get_jwt_identity()
-        car_wash_location_fk = 2 #TODO - get the location from the frontend 
-
         db, cursor = x.db()
 
-        q = """INSERT INTO feedback 
-       (feedback_pk, rating, comment, created_at, user_fk, car_wash_location_fk) 
-       VALUES (%s, %s, %s, %s, %s, %s)"""
-        cursor.execute(q, (feedback_pk, rating, comment, created_at, user_fk, car_wash_location_fk))
+        # Slet relaterede data først
+        cursor.execute("DELETE FROM feedback WHERE user_fk = %s", (user_pk,))
+        cursor.execute("DELETE FROM favorites WHERE user_fk = %s", (user_pk,))
+        cursor.execute("DELETE FROM license_plate WHERE user_fk = %s", (user_pk,))
 
+        # Slet så brugeren
+        cursor.execute("DELETE FROM users WHERE user_pk = %s", (user_pk,))
         db.commit()
 
-        return jsonify(
-            message="Feedback sent successfully"
-        ), 201
+        if cursor.rowcount == 0:
+            return {"error": "User not found"}, 404
+
+        return {"error": "User deleted"}, 200
 
     except Exception as ex:
         ic(ex)
-
-        return jsonify(
-            error="System under maintenance"
-        ), 500
+        return {"error": "System under maintenance"}, 500
 
     finally:
-        if "cursor" in locals():cursor.close()
-        if "db" in locals():db.close()
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
 
 
-##############################################  
+#######################################################################################
+#                                       LOCATIONS                                    #
+#######################################################################################
+
+                    # GET LOCATIONS #
+############################################################
+@app.get("/locations")
+def get_locations():
+    try:
+        db, cursor = x.db()
+
+        q = """
+            SELECT 
+                car_wash_locations.*,
+                COUNT(car_wash_hall_info.car_wash_pk) AS car_wash_hall_number
+            FROM car_wash_locations
+            LEFT JOIN car_wash_hall_info
+                ON car_wash_locations.location_pk = car_wash_hall_info.car_wash_location_fk
+            GROUP BY car_wash_locations.location_pk
+        """
+
+        cursor.execute(q)
+        locations = cursor.fetchall()
+
+        if not locations:
+            return jsonify(error="No locations found"), 404
+
+        return jsonify(locations=locations)
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+
+        # GET SINGLE LOCATION #
+##############################################
 @app.get("/locations/<location_pk>")
 def get_single_location(location_pk):
     try:
@@ -468,10 +445,44 @@ def get_single_location(location_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+        # GET WASH HALLS FOR LOCATION #
+############################################## skal måske slettes ?
+@app.get("/wash-hall/<location_pk>")
+def get_wash_halls(location_pk):
+    try:
+        db, cursor = x.db()
+
+        q = """
+        SELECT car_wash_hall_info.car_wash_hall_number
+        FROM car_wash_hall_info
+        INNER JOIN car_wash_locations
+        ON car_wash_hall_info.car_wash_location_fk = car_wash_locations.location_pk
+        WHERE car_wash_locations.location_pk = %s;
+        """
+
+        cursor.execute(q, (location_pk,))
+        wash_halls = cursor.fetchall()
+
+        if not wash_halls:
+            return jsonify(error="No washhalls found for this location"), 404
+
+        return jsonify(wash_halls=wash_halls)
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
 #######################################################################################
-#                           INFO RELATING WASH-PROCESS                                #
+#                           CAR WASH HISTORY                                      #
 #######################################################################################
 
+        # GET CAR WASH HISTORY #
 ##############################################
 @app.get("/car-wash-history/<license_plate_pk>")
 def get_car_wash_history(license_plate_pk):
@@ -509,6 +520,7 @@ def get_car_wash_history(license_plate_pk):
         if "db" in locals(): db.close()
 
 
+                # POST CAR WASH HISTORY #
 ############################################################
 @app.post("/car-wash-history")
 @jwt_required()
@@ -580,37 +592,11 @@ def add_car_wash_history():
         if "db" in locals():
             db.close()
 
+#######################################################################################
+#                                    FAVORITES                                        #
+#######################################################################################
 
-##############################################
-@app.get("/wash-hall/<location_pk>")
-def get_wash_halls(location_pk):
-    try:
-        db, cursor = x.db()
-
-        q = """
-        SELECT car_wash_hall_info.car_wash_hall_number
-        FROM car_wash_hall_info
-        INNER JOIN car_wash_locations
-        ON car_wash_hall_info.car_wash_location_fk = car_wash_locations.location_pk
-        WHERE car_wash_locations.location_pk = %s;
-        """
-
-        cursor.execute(q, (location_pk,))
-        wash_halls = cursor.fetchall()
-
-        if not wash_halls:
-            return jsonify(error="No washhalls found for this location"), 404
-
-        return jsonify(wash_halls=wash_halls)
-
-    except Exception as ex:
-        ic(ex)
-        return jsonify(error="System under maintenance"), 500
-
-    finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
-
+            # GET FAVORITES #
 ##############################################
 @app.get("/favorites")
 @jwt_required()
@@ -641,6 +627,8 @@ def get_favorites():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+              # POST FAVORITE #
 ##############################################
 @app.post("/favorites")
 @jwt_required()
@@ -675,6 +663,8 @@ def add_favorite():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+            # DELETE FAVORITE #
 ##############################################
 @app.delete("/favorites/<location_pk>")
 @jwt_required()
@@ -699,6 +689,56 @@ def remove_favorit(location_pk):
         if "db" in locals(): db.close()  
 
 
+#######################################################################################
+#                                    FEEDBACK                                        #
+#######################################################################################
+
+                    # POST FEEDBACK #
+############################################################
+@app.post("/feedback")
+@jwt_required()  
+def feedback():
+    try:
+        data = request.get_json()
+        rating = data.get("rating")
+        comment = data.get("comment")
+        feedback_pk = uuid.uuid4().hex
+        created_at = int(time.time())
+    
+        # Skal disse måske valideres med x-fil?
+        user_fk = get_jwt_identity()
+        car_wash_location_fk = 2 #TODO - get the location from the frontend 
+
+        db, cursor = x.db()
+
+        q = """INSERT INTO feedback 
+       (feedback_pk, rating, comment, created_at, user_fk, car_wash_location_fk) 
+       VALUES (%s, %s, %s, %s, %s, %s)"""
+        cursor.execute(q, (feedback_pk, rating, comment, created_at, user_fk, car_wash_location_fk))
+
+        db.commit()
+
+        return jsonify(
+            message="Feedback sent successfully"
+        ), 201
+
+    except Exception as ex:
+        ic(ex)
+
+        return jsonify(
+            error="System under maintenance"
+        ), 500
+
+    finally:
+        if "cursor" in locals():cursor.close()
+        if "db" in locals():db.close()
+
+
+#######################################################################################
+#                                    DAMAGE REPORT                                    #
+#######################################################################################
+
+            # POST DAMAGE REPORT #
 ##############################################
 @app.post("/skaderapportering")
 def skaderapportering():

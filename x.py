@@ -11,7 +11,11 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-########################### CONNECTION TO DATABASE ####################################
+
+#######################################################################################
+#                           CONNECTION TO DATABASE                                   #
+#######################################################################################
+
 def db():
     try:
         db = mysql.connector.connect(
@@ -28,7 +32,7 @@ def db():
 
 
 #######################################################################################
-#                    HERUNDER BEGYNDER VALIDATION FOR USERS TABEL                     #
+#                                 USER VALIDATION                                    #
 #######################################################################################
 
 #------------- VALIDATION FOR FIRST_NAME -------------#
@@ -96,16 +100,6 @@ def validate_user_checked_hashed_password():
     return user_checked_hashed_password
 
 
-#--------------- VALIDATION FOR UUID ----------------#
-# 0 to 9 letters a to f
-REGEX_UUID4 = r"^[0-9a-f]{32}$"
-def validate_uuid4(uuid4):
-    uuid = uuid4.strip()
-    if not re.match(REGEX_UUID4, uuid):
-        raise Exception("company_exception uuid4 invalid")
-    return uuid
-
-
 #----------- VALIDATION FOR LICENSE_PLATE -----------#
 # Dansk format: præcis 2 bogstaver + præcis 5 cifre, fx "AB12345"
 REGEX_LICENSE_PLATE = r"^[A-Z]{2}\d{5}$"
@@ -117,8 +111,11 @@ def validate_license_plate():
         raise Exception("company_exception license_plate")
     return plate_number
 
+#######################################################################################
+#                                       SEND EMAIL                                    #
+#######################################################################################
 
-#------------------- SEND EMAIL ---------------------#
+#------------------- SEND VALIDATION EMAIL ---------------------#
 # Function without a route
 def send_email(subject, html):
     try:    
@@ -190,3 +187,17 @@ def send_damage_report_email(subject, html):
         return "cannot send email", 500
     finally:
         pass
+
+
+#######################################################################################
+#                                   ID VALIDATION                                    #
+#######################################################################################
+
+#--------------- VALIDATION FOR UUID ----------------#
+# 0 to 9 letters a to f
+REGEX_UUID4 = r"^[0-9a-f]{32}$"
+def validate_uuid4(uuid4):
+    uuid = uuid4.strip()
+    if not re.match(REGEX_UUID4, uuid):
+        raise Exception("company_exception uuid4 invalid")
+    return uuid
