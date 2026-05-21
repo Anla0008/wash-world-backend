@@ -193,52 +193,6 @@ def login():
 
 
 ############################################################
-@app.post("/reset-password/<key>")
-def reset_password_with_key(key):
-    try:
-        # Valider nøglen fra URL'en
-        validated_key = x.validate_uuid4(key)
-
-        # Valider nyt kodeord fra request body
-        password = x.validate_user_hashed_password()
-
-        # Hash kodeordet
-        new_hashed_password = generate_password_hash(password)
-
-        db, cursor = x.db()
-
-        # Opdater kodeordet hvor nøglen matcher
-        q = """
-            UPDATE users 
-            SET user_hashed_password = %s 
-            WHERE user_reset_password = %s
-        """
-        cursor.execute(q, (new_hashed_password, validated_key))
-        db.commit()
-
-        # Hvis ingen rækker blev opdateret, var nøglen ikke gyldig
-        if cursor.rowcount == 0:
-            return jsonify(error_code="invalid_key"), 404
-
-        return jsonify(message="Password changed, please login"), 200
-
-    except Exception as ex:
-        ic(ex)
-
-        if "company_exception user_hashed_password" in str(ex):
-            return jsonify(error_code="invalid_password"), 400
-
-        if "company_exception uuid4 invalid" in str(ex):
-            return jsonify(error_code="invalid_key"), 400
-
-        return jsonify(error="System under maintenance"), 500
-
-    finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
-
-
-############################################################
 @app.get("/reset-password/<key>")
 def show_reset_password(key):
     try:
@@ -275,48 +229,53 @@ def show_reset_password(key):
 
 
 ############################################################
-@app.post("/reset-password")
-def reset_password():
+@app.post("/reset-password/<key>")
+def reset_password(key):
     try:
-        password = x.validate_user_password(request.form.get("password", ""))
-        confirm_password = request.form.get("confirm-password", "").strip()
+        # TODO: Validate key
+        validated_key = x.validate_uuid4(key)
+
+        # TODO: Validate new password
+        password = x.validate_user_hashed_password()
+        confirm_password = request.json.get("confirm_password", "").strip()
 
         # If passwords not match, make a error
-        if confirm_password != password:
-            return "Password does not match", 400
-
-        # Validate key again
-        key = x.validate_uuid4(request.form.get("key", ""))
+        if password != confirm_password:
+            return jsonify(error_code="passwords_do_not_match"), 400
 
         # Hash password
-        user_forgot_password = generate_password_hash(password)
+        new_hashed_password = generate_password_hash(password)
 
-        # TODO: Connect to the db
+        # TODO: Connect to the database
         db, cursor = x.db()
 
-        # Update new password
+        # Update new password where key matches
         q = """
-            UPDATE users
+            UPDATE users 
             SET user_hashed_password = %s 
             WHERE user_reset_password_key = %s
         """
-
-        # TODO: Update the verification_key column
-        cursor.execute(q, (user_forgot_password, key))
+        cursor.execute(q, (new_hashed_password, validated_key))
         db.commit()
-        
-        return "Password changed, please login"
-    
+
+        # Hvis ingen rækker blev opdateret, var nøglen ikke gyldig
+        if cursor.rowcount == 0:
+            return jsonify(error_code="invalid_key"), 404
+
+        return jsonify(message="Password changed, please login"), 200
+
     except Exception as ex:
         ic(ex)
-        if "company_exception user_hashed_password" in str(ex):
-            return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
-        
-        if "company_exception uuid4 invalid" in str(ex):
-            return "Invalid key", 400
 
-        return str(ex), 500
-    
+        if "company_exception user_hashed_password" in str(ex):
+            return jsonify(error_code="invalid_password"), 400
+
+        if "company_exception uuid4 invalid" in str(ex):
+            return jsonify(error_code="invalid_key"), 400
+
+        # Worst case
+        return jsonify(error="System under maintenance"), 500
+
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
