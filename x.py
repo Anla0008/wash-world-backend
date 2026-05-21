@@ -87,19 +87,6 @@ def validate_user_hashed_password():
     return user_hashed_password
 
 
-#------------ VALIDATION FOR CHECKED PASWORD ------------# !!!!!!!!!!!!!!!!!!!!!
-USER_HASHED_PASSWORD_MIN = 8
-USER_HASHED_PASSWORD_MAX = 255
-REGEX_USER_HASHED_PASSWORD = f"^.{{{USER_HASHED_PASSWORD_MIN},{USER_HASHED_PASSWORD_MAX}}}$" # Regex med en f-string.
-
-def validate_user_checked_hashed_password():
-    user_checked_hashed_password = request.json.get("user_checked_hashed_password", "").strip()
-
-    if not re.match(REGEX_USER_HASHED_PASSWORD, user_checked_hashed_password):
-        raise Exception ("company_exception user_checked_hashed_password")
-    return user_checked_hashed_password
-
-
 #----------- VALIDATION FOR LICENSE_PLATE -----------#
 # Dansk format: præcis 2 bogstaver + præcis 5 cifre, fx "AB12345"
 REGEX_LICENSE_PLATE = r"^[A-Z]{2}\d{5}$"

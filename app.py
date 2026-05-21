@@ -32,11 +32,9 @@ jwt = JWTManager(app)
 @app.post("/sign-up")
 def sign_up():
     try:
-
         ic(request.json)
 
         # TODO: Validate user data
-        # verification_key = x.validate_uuid4()
         verification_key = uuid.uuid4().hex
         user_first_name = x.validate_user_first_name()
         user_last_name = x.validate_user_last_name()
@@ -57,7 +55,7 @@ def sign_up():
 
         user_deleted_at = 0
        
-       # Two times uuid to make it extra secure
+        # Two times uuid to make it extra secure
         user_reset_password_key = uuid.uuid4().hex
         ic(user_reset_password_key)
 
@@ -69,7 +67,7 @@ def sign_up():
         db, cursor = x.db()
 
         # Insert bruger
-         # TODO: Insert user data to the db
+        # TODO: Insert user data to the db
         q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
         cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key))
 
@@ -86,7 +84,7 @@ def sign_up():
             <a href="http://localhost:3000/verify/{user_verification_key}">Aktiver konto</a>
         """
 
-        x.send_email("Aktiver din konto", html)
+        x.send_email("Velkommen til Washworld! - Aktiver din konto", html)
         return jsonify({"message": "Please check your email maybe it arrived in the spam folder"}), 201
     
     except Exception as ex:
@@ -166,20 +164,19 @@ def verify_account(key):
 ############################################################
 @app.post("/")
 def login():
-
     try:
         # TODO: Validate user data
         user_email = x.validate_user_email()
         password = x.validate_user_hashed_password()
 
-        # TODO: Connect to the database
+        # TODO: Connect to the database og finder brugeren i databasen
         db, cursor = x.db()
         q = "SELECT * FROM users WHERE user_email = %s"
         cursor.execute(q, (user_email,))
         user = cursor.fetchone()
 
         # Tjek at brugeren findes og at password matcher
-        if not user or not check_password_hash(user["user_hashed_password"], password):
+        if not user or not check_password_hash(user["user_hashed_password"], password): # sammenligner det indtastede password med det hashede i databasen
             return jsonify(error="Invalid email or password"), 401
 
         # Create JWT token
