@@ -43,6 +43,7 @@ def sign_up():
         user_verified_at = 0
         user_forgot_password = 0
         password = x.validate_user_hashed_password()
+        has_sub = 0
         
         # Hasher vores password
         user_hashed_password = generate_password_hash(password)
@@ -68,8 +69,8 @@ def sign_up():
 
         # Insert bruger
         # TODO: Insert user data to the db
-        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key))
+        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key, has_sub))
 
         # Insert nummerplade med reference til brugeren
         q2 = "INSERT INTO license_plate VALUES (%s, %s, %s)"
@@ -384,6 +385,35 @@ def reset_password(key):
         # Worst case
         return jsonify(error="System under maintenance"), 500
 
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
+#######################################################################################
+#                                   SUBSCRIPTIONS                                    #
+#######################################################################################
+
+
+                    # POST SUBSCRIPTION #
+############################################################
+@app.post("/subscriptions")
+@jwt_required()
+def add_subscription():
+    try:
+        db, cursor = x.db()
+
+        has_sub = 1
+
+        q = "UPDATE users SET has_sub = %s WHERE user_pk = %s"
+        cursor.execute(q, (has_sub, get_jwt_identity()))
+        db.commit()
+
+        return {"message": "Subscription added"}, 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"error": "System under maintenance"}, 500
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
