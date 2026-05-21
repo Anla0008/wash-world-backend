@@ -113,6 +113,48 @@ def sign_up():
         if "db" in locals(): db.close() # db refers to anything inside the database
 
 
+                # PATCH RESEND VERIFICATION #
+############################################################
+@app.patch("/resend-verification")
+def resend_verification():
+    try:
+        user_email = x.validate_user_email()
+
+        db, cursor = x.db()
+
+        cursor.execute("SELECT * FROM users WHERE user_email = %s AND user_verified_at = 0", (user_email,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify(error_code="user_not_found"), 404
+
+        # Generer ny verification key
+        new_verification_key = uuid.uuid4().hex
+
+        cursor.execute(
+            "UPDATE users SET user_verification_key = %s WHERE user_email = %s",
+            (new_verification_key, user_email)
+        )
+        db.commit()
+
+        html = f"""
+            <h1>Velkommen til Washworld!</h1>
+            <p>Klik på linket herunder for at aktivere din konto:</p>
+            <a href="http://localhost:3000/verify/{new_verification_key}">Aktiver konto</a>
+        """
+        x.send_email("Aktiver din konto", html)
+
+        return jsonify(message="Verification email resent"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
                 # GET VERIFY ACCOUNT #
 ############################################################
 @app.get("/verify/<key>")
