@@ -114,6 +114,31 @@ def sign_up():
         if "db" in locals(): db.close() # db refers to anything inside the database
 
 
+                # POST CHECK EMAIL #
+############################################################
+@app.post("/check-email")
+def check_email():
+    try:
+        user_email = x.validate_user_email()
+
+        db, cursor = x.db()
+        cursor.execute("SELECT user_email FROM users WHERE user_email = %s", (user_email,))
+        user = cursor.fetchone()
+
+        if user:
+            return jsonify(error_code="email_taken"), 409
+
+        return jsonify(message="Email available"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
                 # PATCH RESEND VERIFICATION #
 ############################################################
 @app.patch("/resend-verification")
