@@ -871,6 +871,9 @@ def add_favorite():
         db, cursor = x.db()
 
         q = "INSERT INTO favorites VALUES (%s, %s, %s)"
+
+#det er mere sikkert at bruge parameterized queries (med %s) for at undgå SQL injection, selvom user_fk 
+# kommer fra JWT og burde være sikkert, er det en god praksis at altid bruge parameterized queries
         cursor.execute(q, (favorit_pk, user_fk, car_wash_location_fk))
         db.commit()
 
