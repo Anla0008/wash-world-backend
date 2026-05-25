@@ -965,12 +965,13 @@ def feedback():
 
             # POST DAMAGE REPORT #
 ##############################################
-@app.post("/skaderapportering")
-def skaderapportering():
+@app.post("/damage-report")
+@jwt_required()
+def send_damage_report():
     try:
         data = request.json
         description = (data.get("description") or "").strip()
-        user_email = (data.get("user_email") or "Ukendt").strip()
+        user_email = (data.get("user_email") or "Ukendt").strip() # Brugerens email hentes fra request-body og inkluderes i emailens indhold, så Washworld ved hvem der har indsendt rapporten
 
         # Validate that description is not empty
         if not description:
@@ -982,7 +983,7 @@ def skaderapportering():
             <p><strong>Fra:</strong>{user_email}</p>
             <p><strong>Beskrivelse:</strong>{description}</p>
         """
-        x.send_damage_report_email("Skaderapport", html)
+        x.send_damage_report_email("Skaderapport", html, user_email)
         return jsonify(message="Skaderapport sendt"), 200
 
     except Exception as ex:

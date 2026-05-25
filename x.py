@@ -145,9 +145,9 @@ def send_email(subject, html):
 
 #------------------- SEND DAMAGE REPORT EMAIL ---------------------#
 # Tried to match this function with the validate email function
-def send_damage_report_email(subject, html):
+def send_damage_report_email(subject, html, user_email):
     try:
-        sender_email = "leamhejlskov@gmail.com" # TODO: skift til brugerens email
+        sender_email = "leamhejlskov@gmail.com" # Vi bruger Leas Gmail-konto til at sende emailen, da det er den eneste konto vi har sat op med et app-password til SMTP-login.
         password = "sfra rbpr hiao rrlu"
 
         # Fixed receiver. All damage reports go to this address – should be washworlds service email
@@ -157,6 +157,8 @@ def send_damage_report_email(subject, html):
         message = MIMEMultipart()
         message["From"] = "Washworld"
         message["To"] = receiver_email
+        # Vi kan IKKE sætte From til brugerens email, da vi ikke har rettigheder til at sende på vegne af en vilkårlig Gmail-adresse.
+        message["Reply-To"] = user_email # Reply-To sættes til brugerens email, så Washworld kan svare direkte tilbage til brugeren — uden at skulle kopiere emailen fra HTML-indholdet.
         message["Subject"] = subject
         message.attach(MIMEText(html, "html"))
 
