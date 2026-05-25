@@ -642,9 +642,9 @@ def get_car_wash_history(license_plate_pk):
         if "db" in locals(): db.close()
 
 
-                # POST CAR WASH HISTORY #
+            # POST CAR WASH HISTORY (RECIEPT) #
 ############################################################
-@app.post("/car-wash-history")
+@app.post("/reciept")
 @jwt_required()
 def add_car_wash_history():
     try:
