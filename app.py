@@ -418,6 +418,32 @@ def add_subscription():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+            # GET SUBSCIPTION STATUS #
+############################################################
+@app.get("/subscription/status")
+@jwt_required()
+def get_subscription_status():
+    try:
+        db, cursor = x.db()
+
+        q = "SELECT has_sub FROM users WHERE user_pk = %s"
+        cursor.execute(q, (get_jwt_identity(),))
+        row = cursor.fetchone()
+
+        if not row:
+            return {"error": "User not found"}, 404
+
+        # Returnerer true eller false baseret på has_sub værdien i databasen (1 for true, 0 for false)
+        return {"has_sub": bool(row["has_sub"])}, 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"error": "System under maintenance"}, 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
 #######################################################################################
 #                              PROFILE INFORMATION                                   #
 #######################################################################################
@@ -499,6 +525,7 @@ def update_profile_information():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
 
 #######################################################################################
 #                                     DELETE USER                                    #
