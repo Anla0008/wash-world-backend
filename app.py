@@ -391,20 +391,59 @@ def reset_password(key):
 #######################################################################################
 #                              PROFILE INFORMATION                                   #
 #######################################################################################
-
-            # PATH PROFILE INFORMATION #
+ 
+            # GET PROFILE INFORMATION #
 ############################################################
-@app.patch("/profile-information/<user_pk>")
-def profile_information(user_pk):
+@app.get("/profile-information")
+@jwt_required()
+def get_profile_information():
     try:
-        # Validerer user information
+        user_pk = get_jwt_identity()
+ 
+        db, cursor = x.db()
+ 
+        q = """
+            SELECT 
+                users.user_first_name,
+                users.user_last_name,
+                users.user_email,
+                license_plate.plate_number
+            FROM users
+            LEFT JOIN license_plate ON license_plate.user_fk = users.user_pk
+            WHERE users.user_pk = %s
+        """
+ 
+        cursor.execute(q, (user_pk,))
+        user = cursor.fetchone()
+ 
+        if not user:
+            return jsonify(error="User not found"), 404
+ 
+        return jsonify(user=user), 200
+ 
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+ 
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+ 
+ 
+            # PATCH PROFILE INFORMATION #
+############################################################
+@app.patch("/profile-information")
+@jwt_required()
+def update_profile_information():
+    try:
+        user_pk = get_jwt_identity()
+ 
         user_first_name = x.validate_user_first_name()
         user_last_name = x.validate_user_last_name()
         user_email = x.validate_user_email()
-
-        # Connect til database
+ 
         db, cursor = x.db()
-
+ 
         q = """
             UPDATE users
             SET user_first_name = %s,
@@ -412,20 +451,21 @@ def profile_information(user_pk):
                 user_email = %s
             WHERE user_pk = %s
         """
-
+ 
         cursor.execute(q, (user_first_name, user_last_name, user_email, user_pk))
         db.commit()
-
-        # cursor.rowcount er et tal der fortæller hvor mange rækker der blev påvirket 
+ 
         if cursor.rowcount == 0:
             return jsonify(error="User not found"), 404
-            
-        return jsonify(error="Profile updated"), 200
-
+ 
+        return jsonify(message="Profile updated"), 200
+ 
     except Exception as ex:
         ic(ex)
-        return {"error": "System under maintenance"}, 500
-
+        if "1062" in str(ex) and "user_email" in str(ex):
+            return jsonify(error_code="email_taken"), 409
+        return jsonify(error="System under maintenance"), 500
+ 
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
