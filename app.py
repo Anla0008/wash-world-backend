@@ -443,6 +443,32 @@ def add_subscription():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+            # GET SUBSCIPTION STATUS #
+############################################################
+@app.get("/subscription/status")
+@jwt_required()
+def get_subscription_status():
+    try:
+        db, cursor = x.db()
+
+        q = "SELECT has_sub FROM users WHERE user_pk = %s"
+        cursor.execute(q, (get_jwt_identity(),))
+        row = cursor.fetchone()
+
+        if not row:
+            return {"error": "User not found"}, 404
+
+        # Returnerer true eller false baseret på has_sub værdien i databasen (1 for true, 0 for false)
+        return {"has_sub": bool(row["has_sub"])}, 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"error": "System under maintenance"}, 500
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
 #######################################################################################
 #                              PROFILE INFORMATION                                   #
 #######################################################################################
@@ -524,6 +550,7 @@ def update_profile_information():
     finally:
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
+
 
 #######################################################################################
 #                                     DELETE USER                                    #
@@ -717,13 +744,26 @@ def add_car_wash_history():
 
         car_wash_history_pk = uuid.uuid4().hex
 
-        # Fra frontend
-        license_plate_fk = data.get("license_plate_fk")
+        user_fk = get_jwt_identity()
+
+        db, cursor = x.db()
+
+        # Hent brugerens nummerplade
+        cursor.execute("""
+            SELECT license_plate_pk
+            FROM license_plate
+            WHERE user_fk = %s
+        """, (user_fk,))
+
+        plate = cursor.fetchone()
+
+        if not plate:
+            return jsonify(error="License plate not found"), 404
+
+        license_plate_fk = plate["license_plate_pk"]
+
         car_wash_location_fk = data.get("car_wash_location_fk")
         car_wash_hall_fk = data.get("car_wash_hall_fk")
-
-        # Fra JWT
-        user_fk = get_jwt_identity()
 
         date_of_wash = int(time.time())
 
@@ -731,8 +771,6 @@ def add_car_wash_history():
         car_wash_type = data.get("car_wash_type")
         car_wash_started_at = data.get("car_wash_started_at")
         car_wash_ended_at = data.get("car_wash_ended_at")
-
-        db, cursor = x.db()
 
         q = """
         INSERT INTO car_wash_history
