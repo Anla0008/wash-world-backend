@@ -475,6 +475,58 @@ def get_subscription_status():
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
+
+                    # UPDATE SUBSCRIPTION #
+############################################################
+@app.patch("/subscription")
+@jwt_required()
+def update_subscription():
+    try:
+        db, cursor = x.db()
+
+        data = request.get_json()
+        has_sub = data.get("has_sub")
+        sub_type = data.get("sub_type")
+
+        q = "UPDATE users SET has_sub = %s, sub_type = %s WHERE user_pk = %s"
+        cursor.execute(q, (has_sub, sub_type, get_jwt_identity()))
+        db.commit()
+
+        return {"message": "Subscription updated"}, 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"error": "System under maintenance"}, 500
+
+    finally:
+        if "cursor" in locals():
+            cursor.close()
+        if "db" in locals():
+            db.close()
+
+                    # DELETE SUBSCRIPTION #
+############################################################
+@app.delete("/subscription")
+@jwt_required()
+def delete_subscription():
+    try:
+        db, cursor = x.db()
+
+        q = "UPDATE users SET has_sub = 0, sub_type = NULL WHERE user_pk = %s"
+        cursor.execute(q, (get_jwt_identity(),))
+        db.commit()
+
+        return {"message": "Subscription deleted"}, 200
+
+    except Exception as ex:
+        ic(ex)
+        return {"error": "System under maintenance"}, 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
 #######################################################################################
 #                              PROFILE INFORMATION                                   #
 #######################################################################################
