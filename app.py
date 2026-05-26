@@ -419,7 +419,7 @@ def add_subscription():
         if "db" in locals(): db.close()
 
 
-            # GET SUBSCIPTION STATUS #
+         # GET SUBSCIPTION STATUS AND TYPE #
 ############################################################
 @app.get("/subscription/status")
 @jwt_required()
@@ -427,7 +427,7 @@ def get_subscription_status():
     try:
         db, cursor = x.db()
 
-        q = "SELECT has_sub FROM users WHERE user_pk = %s"
+        q = "SELECT has_sub, sub_type FROM users WHERE user_pk = %s"
         cursor.execute(q, (get_jwt_identity(),))
         row = cursor.fetchone()
 
@@ -435,7 +435,7 @@ def get_subscription_status():
             return {"error": "User not found"}, 404
 
         # Returnerer true eller false baseret på has_sub værdien i databasen (1 for true, 0 for false)
-        return {"has_sub": bool(row["has_sub"])}, 200
+        return {"has_sub": bool(row["has_sub"]), "sub_type": row["sub_type"]}, 200
 
     except Exception as ex:
         ic(ex)
