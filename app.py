@@ -619,14 +619,18 @@ def update_profile_information():
 
                         # DELETE USER #
 ############################################################
-@app.delete("/users/<user_pk>")
-def delete_user(user_pk):
+@app.delete("/users")
+@jwt_required()
+def delete_user():
     try:
+        user_pk = get_jwt_identity()
+
         db, cursor = x.db()
 
         # Slet relaterede data først
         cursor.execute("DELETE FROM feedback WHERE user_fk = %s", (user_pk,))
         cursor.execute("DELETE FROM favorites WHERE user_fk = %s", (user_pk,))
+        cursor.execute("DELETE FROM car_wash_history WHERE user_fk = %s", (user_pk,))
         cursor.execute("DELETE FROM license_plate WHERE user_fk = %s", (user_pk,))
 
         # Slet så brugeren
@@ -636,7 +640,7 @@ def delete_user(user_pk):
         if cursor.rowcount == 0:
             return {"error": "User not found"}, 404
 
-        return {"error": "User deleted"}, 200
+        return {"message": "User deleted"}, 200
 
     except Exception as ex:
         ic(ex)
