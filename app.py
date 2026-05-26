@@ -68,6 +68,9 @@ def sign_up():
         # TODO: Connect to the database
         db, cursor = x.db()
 
+        # Sørger for sub IKKE er null
+        sub_type = "" 
+
         # Insert bruger
         # TODO: Insert user data to the db
         q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
