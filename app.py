@@ -79,7 +79,7 @@ def sign_up():
 
         db.commit()  # Begge inserts committes samlet
 
-        # TODO: Send email with verification key (5000, da flask opdaterer DB og viser tekst)
+        # Sender email with verification key (5000, da flask opdaterer DB og viser tekst)
         html = f"""
             <h1>Velkommen til Washworld!</h1>
             <p>Klik på linket herunder for at aktivere din konto:</p>
@@ -93,13 +93,13 @@ def sign_up():
         ic(ex)
         # If statement for first name
         if "company_exception user_first_name" in str(ex):
-            return f"User first name {x.USER_FIRST_NAME_MIN} to {x.USER_FIRST_NAME_MAX} characters", 400
+            return jsonify({"error": f"User first name {x.USER_FIRST_NAME_MIN} to {x.USER_FIRST_NAME_MAX} characters"}), 400
         
         if "company_exception email" in str(ex):
-            return "Invalid email", 400
+            return jsonify({"error": "Invalid email"}), 400
         
         if "company_exception user_hashed_password" in str(ex):
-            return f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters", 400
+            return jsonify({"error": f"Password {x.USER_HASHED_PASSWORD_MIN} to {x.USER_HASHED_PASSWORD_MAX} characters"}), 400
         
         # Dublikeret email eller nummerplade
         if "1062" in str(ex) and "user_email" in str(ex):
@@ -108,7 +108,7 @@ def sign_up():
             return jsonify(error_code="plate_taken"), 409
 
         # Worst case
-        return f"""<browser>System under maintenance</browser>""", 500
+        return jsonify({"error": "System under maintenance"}), 500
         
     finally: 
         if "cursor" in locals(): cursor.close() # Locals refers to anything inside the try or except
