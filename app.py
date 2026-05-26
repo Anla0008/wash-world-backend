@@ -13,7 +13,7 @@ from datetime import timedelta # For JWT token expiration
 from icecream import ic
 ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
-from flask_jwt_extended import JWTManager, data, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
 
 app = Flask(__name__)
 CORS(app)  # allows everything
@@ -44,6 +44,7 @@ def sign_up():
         user_forgot_password = 0
         password = x.validate_user_hashed_password()
         has_sub = 0
+        sub_type = None
         
         # Hasher vores password
         user_hashed_password = generate_password_hash(password)
@@ -69,8 +70,8 @@ def sign_up():
 
         # Insert bruger
         # TODO: Insert user data to the db
-        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key, has_sub))
+        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key, has_sub, sub_type, user_deleted_at))
 
         # Insert nummerplade med reference til brugeren
         q2 = "INSERT INTO license_plate VALUES (%s, %s, %s)"
@@ -428,6 +429,8 @@ def add_subscription():
     try:
         db, cursor = x.db()
 
+        data = request.get_json()
+
         has_sub = 1
         sub_type = (data.get("sub_type") or "").strip()
 
@@ -440,10 +443,12 @@ def add_subscription():
     except Exception as ex:
         ic(ex)
         return {"error": "System under maintenance"}, 500
-    finally:
-        if "cursor" in locals(): cursor.close()
-        if "db" in locals(): db.close()
 
+    finally:
+        if "cursor" in locals():
+            cursor.close()
+        if "db" in locals():
+            db.close()
 
          # GET SUBSCIPTION STATUS AND TYPE #
 ############################################################
