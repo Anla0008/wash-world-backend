@@ -455,7 +455,7 @@ def add_subscription():
 
          # GET SUBSCIPTION STATUS AND TYPE #
 ############################################################
-@app.get("/subscription/status")
+@app.get("/subscription")
 @jwt_required()
 def get_subscription_status():
     try:
