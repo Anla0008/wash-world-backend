@@ -13,7 +13,7 @@ from datetime import timedelta # For JWT token expiration
 from icecream import ic
 ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
+from flask_jwt_extended import JWTManager, data, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
 
 app = Flask(__name__)
 CORS(app)  # allows everything
@@ -429,9 +429,10 @@ def add_subscription():
         db, cursor = x.db()
 
         has_sub = 1
+        sub_type = (data.get("sub_type") or "").strip()
 
-        q = "UPDATE users SET has_sub = %s WHERE user_pk = %s"
-        cursor.execute(q, (has_sub, get_jwt_identity()))
+        q = "UPDATE users SET has_sub = %s, sub_type = %s WHERE user_pk = %s"
+        cursor.execute(q, (has_sub, sub_type, get_jwt_identity()))
         db.commit()
 
         return {"message": "Subscription added"}, 200
