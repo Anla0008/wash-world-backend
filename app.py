@@ -515,7 +515,7 @@ def delete_subscription():
     try:
         db, cursor = x.db()
 
-        q = "UPDATE users SET has_sub = 0, sub_type = NULL WHERE user_pk = %s"
+        q = "UPDATE users SET has_sub = 0, sub_type = 'nul' WHERE user_pk = %s"
         cursor.execute(q, (get_jwt_identity(),))
         db.commit()
 
