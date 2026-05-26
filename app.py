@@ -698,8 +698,8 @@ def get_wash_halls(location_pk):
 
         # GET CAR WASH HISTORY #
 ##############################################
-@app.get("/car-wash-history/<license_plate_pk>")
-def get_car_wash_history(license_plate_pk):
+@app.get("/car-wash-history/user/<user_pk>")
+def get_car_wash_history(user_pk):
     try:
         db, cursor = x.db()
 
@@ -714,10 +714,11 @@ def get_car_wash_history(license_plate_pk):
         FROM car_wash_history
         JOIN car_wash_locations ON car_wash_history.car_wash_location_fk = car_wash_locations.location_pk
         JOIN license_plate ON car_wash_history.license_plate_fk = license_plate.license_plate_pk
-        WHERE license_plate.license_plate_pk = %s
+        JOIN users ON license_plate.user_fk = users.user_pk
+        WHERE users.user_pk = %s
         """
 
-        cursor.execute(q, (license_plate_pk,))
+        cursor.execute(q, (user_pk,))
         car_wash_history = cursor.fetchall()
 
         if not car_wash_history:
