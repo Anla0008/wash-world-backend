@@ -13,12 +13,12 @@ from datetime import timedelta # For JWT token expiration
 from icecream import ic
 ic.configureOutput(prefix=f"___ | ", includeContext=True)
 
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity # From chatGPT (jwt)
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity 
 
 app = Flask(__name__)
 CORS(app)  # allows everything
 
-app.config["JWT_SECRET_KEY"] = "super-secret-key" # From chatGPT (jwt)
+app.config["JWT_SECRET_KEY"] = "super-secret-key" # This should not be in the backend, but in the .env-file i frontend
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
 jwt = JWTManager(app)
 
