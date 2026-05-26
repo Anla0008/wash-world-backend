@@ -70,8 +70,8 @@ def sign_up():
 
         # Insert bruger
         # TODO: Insert user data to the db
-        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key, has_sub, sub_type, user_deleted_at))
+        q = "INSERT INTO users VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(q, (user_pk, user_first_name, user_last_name, user_email, user_hashed_password, user_created_at, user_verified_at, user_verification_key, user_reset_password_key, has_sub, sub_type))
 
         # Insert nummerplade med reference til brugeren
         q2 = "INSERT INTO license_plate VALUES (%s, %s, %s)"
