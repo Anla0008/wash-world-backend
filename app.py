@@ -735,6 +735,45 @@ def get_car_wash_history(user_pk):
         if "db" in locals(): db.close()
 
 
+        # GET CAR WASH HISTORY DETAILS #
+##############################################
+@app.get("/car-wash-history/detail/<car_wash_history_pk>")
+def get_car_wash_history_detail(car_wash_history_pk):
+    try:
+        db, cursor = x.db()
+
+        q = """
+        SELECT 
+            car_wash_history.car_wash_history_pk,
+            car_wash_locations.location_name,
+            car_wash_history.date_of_wash,
+            car_wash_history.car_wash_type,
+            car_wash_history.car_wash_price,
+            car_wash_history.car_wash_started_at,
+            car_wash_history.car_wash_ended_at,
+            car_wash_history.car_wash_hall_fk
+        FROM car_wash_history
+        JOIN car_wash_locations ON car_wash_history.car_wash_location_fk = car_wash_locations.location_pk
+        WHERE car_wash_history.car_wash_history_pk = %s
+        """
+
+        cursor.execute(q, (car_wash_history_pk,))
+        detail = cursor.fetchone()
+
+        if not detail:
+            return jsonify(error="Not found"), 404
+
+        return jsonify(detail)
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
             # POST CAR WASH HISTORY (RECIEPT) #
 ############################################################
 @app.post("/reciept")
