@@ -932,6 +932,7 @@ def add_car_wash_history():
 @jwt_required()
 def get_favorites():
     try:
+        # Henter brugerens favorit vaske ved at join'e favorites-tabellen med car_wash_locations for at få detaljer om hver favoritlokation
         user_fk = get_jwt_identity()
 
         db, cursor = x.db()
