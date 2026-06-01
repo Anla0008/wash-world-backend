@@ -965,10 +965,11 @@ def get_favorites():
 @jwt_required()
 def add_favorite():
     try:
+        # Data motager hele dictonary fra request body, og vi henter location_pk ud af den
         data = request.get_json()
 
         user_fk = get_jwt_identity()
-        car_wash_location_fk = data.get("location_pk")
+        car_wash_location_fk = data.get("location_pk") #Henter den konkrete location id fra request body, som frontend sender
         favorit_pk = uuid.uuid4().hex
 
         if not car_wash_location_fk:
