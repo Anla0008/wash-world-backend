@@ -658,6 +658,7 @@ def delete_user():
                     # GET LOCATIONS #
 ############################################################
 @app.get("/locations")
+@jwt_required()
 def get_locations():
     try:
         db, cursor = x.db()
@@ -693,6 +694,7 @@ def get_locations():
         # GET SINGLE LOCATION #
 ##############################################
 @app.get("/locations/<location_pk>")
+@jwt_required()
 def get_single_location(location_pk):
     try:
         db, cursor = x.db()
@@ -932,7 +934,7 @@ def add_car_wash_history():
 @jwt_required()
 def get_favorites():
     try:
-        # Henter brugerens favorit vaske ved at join'e favorites-tabellen med car_wash_locations for at få detaljer om hver favoritlokation
+        # Henter brugerens favorit vaskehal ved at joine favorites-tabellen med car_wash_locations for at få detaljer om hver favoritlokation
         user_fk = get_jwt_identity()
 
         db, cursor = x.db()
