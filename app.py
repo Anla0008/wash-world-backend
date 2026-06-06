@@ -991,6 +991,7 @@ def add_favorite():
     except Exception as ex:
         ic(ex)
 
+        # 1062 er en MySQL fejlkode
         if "1062" in str(ex):
             return jsonify(error="Favorite already exists"), 409
 
