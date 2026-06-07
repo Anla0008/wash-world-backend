@@ -753,18 +753,16 @@ def get_single_location(location_pk):
 
 ## returns the NUMBER of wash halls
         # GET WASH HALLS FOR LOCATION #
-############################################## skal måske slettes ?
+##############################################
 @app.get("/wash-hall/<location_pk>")
 def get_wash_halls(location_pk):
     try:
         db, cursor = x.db()
 
         q = """
-        SELECT car_wash_hall_info.car_wash_hall_number
+        SELECT car_wash_hall_number
         FROM car_wash_hall_info
-        INNER JOIN car_wash_locations
-        ON car_wash_hall_info.car_wash_location_fk = car_wash_locations.location_pk
-        WHERE car_wash_locations.location_pk = %s;
+        WHERE car_wash_location_fk = %s;
         """
 
         cursor.execute(q, (location_pk,))
