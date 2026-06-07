@@ -723,6 +723,7 @@ def get_single_location(location_pk):
     try:
         db, cursor = x.db()
 
+# returns the AMOUNT of wash halls for each location
         q = """
             SELECT 
                 car_wash_locations.*,
@@ -750,7 +751,7 @@ def get_single_location(location_pk):
         if "cursor" in locals(): cursor.close()
         if "db" in locals(): db.close()
 
-
+## returns the NUMBER of wash halls
         # GET WASH HALLS FOR LOCATION #
 ############################################## skal måske slettes ?
 @app.get("/wash-hall/<location_pk>")
