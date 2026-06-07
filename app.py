@@ -143,6 +143,30 @@ def check_email():
         if "db" in locals(): db.close()
 
 
+                # POST CHECK PLATE #
+############################################################
+@app.post("/check-plate")
+def check_plate():
+    try:
+        plate_number = x.validate_license_plate()
+
+        db, cursor = x.db()
+        cursor.execute("SELECT plate_number FROM license_plate WHERE plate_number = %s", (plate_number,))
+
+        if cursor.fetchone():
+            return jsonify(error_code="plate_taken"), 409
+
+        return jsonify(message="Plate available"), 200
+
+    except Exception as ex:
+        ic(ex)
+        return jsonify(error="System under maintenance"), 500
+        
+    finally:
+        if "cursor" in locals(): cursor.close()
+        if "db" in locals(): db.close()
+
+
                 # PATCH RESEND VERIFICATION #
 ############################################################
 @app.patch("/resend-verification")
