@@ -275,9 +275,15 @@ def login():
         if not user or not check_password_hash(user["user_hashed_password"], password): # sammenligner det indtastede password med det hashede i databasen
             return jsonify(error="Invalid email or password"), 401
 
+        # Tjek om brugeren har verificeret sin email
+        if user["user_verified_at"] == 0:
+            return jsonify(error_code="email_not_verified"), 403
+
         # Create JWT token
         access_token = create_access_token(identity=user["user_pk"]) # user_pk gemmes INDE I tokenet
         return jsonify(access_token=access_token, user_first_name=user["user_first_name"], user_email=user["user_email"]), 200
+
+        
         
     
     except Exception as ex:
